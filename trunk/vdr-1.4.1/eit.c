@@ -281,6 +281,7 @@ int cTDT::lastDiff = 0;
 cTDT::cTDT(const u_char *Data)
 :SI::TDT(Data, false)
 {
+#if 0 // currently no set time support
   CheckParse();
 
   time_t sattim = getTime();
@@ -298,6 +299,7 @@ cTDT::cTDT(const u_char *Data)
      lastDiff = diff;
      mutex.Unlock();
      }
+#endif
 }
 
 // --- cEitFilter ------------------------------------------------------------

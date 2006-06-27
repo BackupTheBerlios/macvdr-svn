@@ -9,8 +9,11 @@
 
 #include "thread.h"
 #include <errno.h>
+#ifndef NO_LINUX
 #include <linux/unistd.h>
-#include <malloc.h>
+#endif
+#include <stdlib.h>
+//#include <malloc.h>
 #include <stdarg.h>
 #include <sys/resource.h>
 #include <sys/syscall.h>
@@ -140,7 +143,7 @@ cRwLock::cRwLock(bool PreferWriter)
 {
   pthread_rwlockattr_t attr;
   pthread_rwlockattr_init(&attr);
-  pthread_rwlockattr_setkind_np(&attr, PreferWriter ? PTHREAD_RWLOCK_PREFER_WRITER_NP : PTHREAD_RWLOCK_PREFER_READER_NP);
+  //pthread_rwlockattr_setkind_np(&attr, PreferWriter ? PTHREAD_RWLOCK_PREFER_WRITER_NP : PTHREAD_RWLOCK_PREFER_READER_NP);
   pthread_rwlock_init(&rwlock, &attr);
 }
 
@@ -158,9 +161,11 @@ bool cRwLock::Lock(bool Write, int TimeoutMs)
         TimeoutMs = 0;
      }
   if (Write)
-     Result = TimeoutMs ? pthread_rwlock_timedwrlock(&rwlock, &abstime) : pthread_rwlock_wrlock(&rwlock);
+     Result = pthread_rwlock_wrlock(&rwlock);
+     //Result = TimeoutMs ? pthread_rwlock_timedwrlock(&rwlock, &abstime) : pthread_rwlock_wrlock(&rwlock);
   else
-     Result = TimeoutMs ? pthread_rwlock_timedrdlock(&rwlock, &abstime) : pthread_rwlock_rdlock(&rwlock);
+     Result = pthread_rwlock_rdlock(&rwlock);
+     //Result = TimeoutMs ? pthread_rwlock_timedrdlock(&rwlock, &abstime) : pthread_rwlock_rdlock(&rwlock);
   return Result == 0;
 }
 
@@ -176,7 +181,7 @@ cMutex::cMutex(void)
   locked = 0;
   pthread_mutexattr_t attr;
   pthread_mutexattr_init(&attr);
-  pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK_NP);
+  //pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_ERRORCHECK_NP);
   pthread_mutex_init(&mutex, &attr);
 }
 
@@ -316,11 +321,12 @@ bool cThread::EmergencyExit(bool Request)
   return emergencyExitRequested = true; // yes, it's an assignment, not a comparison!
 }
 
-_syscall0(pid_t, gettid)
+//_syscall0(pid_t, gettid)
 
 tThreadId cThread::ThreadId(void)
 {
-  return gettid();
+  return getpid();
+  //return gettid();
 }
 
 void cThread::SetMainThreadId(void)

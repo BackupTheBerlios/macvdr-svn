@@ -10,16 +10,30 @@
 #ifndef __DVBDEVICE_H
 #define __DVBDEVICE_H
 
+#ifndef NO_LINUX
 #include <linux/dvb/frontend.h>
 #include <linux/dvb/version.h>
-#include "device.h"
-#include "dvbspu.h"
 
 #if DVB_API_VERSION != 3
 #error VDR requires Linux DVB driver API version 3!
 #endif
 
+#endif
+
+#include "device.h"
+#include "dvbspu.h"
+
 #define MAXDVBDEVICES  4
+
+#ifdef NO_LINUX
+class cDvbDevice : public cDevice {
+public:
+     static bool Initialize(void);
+     static void SetTransferModeForDolbyDigital(int Mode);
+};
+
+#else
+
 
 class cDvbTuner;
 
@@ -146,5 +160,7 @@ protected:
   virtual void CloseDvr(void);
   virtual bool GetTSPacket(uchar *&Data);
   };
+
+#endif // NO_LINUX
 
 #endif //__DVBDEVICE_H

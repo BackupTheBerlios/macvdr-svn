@@ -10,11 +10,15 @@
 #include "dvbdevice.h"
 #include <errno.h>
 #include <limits.h>
+
+#ifndef NO_LINUX
 #include <linux/videodev.h>
 #include <linux/dvb/audio.h>
 #include <linux/dvb/dmx.h>
 #include <linux/dvb/frontend.h>
 #include <linux/dvb/video.h>
+#endif
+
 #include <sys/ioctl.h>
 #include <sys/mman.h>
 #include "channels.h"
@@ -26,6 +30,18 @@
 #include "status.h"
 #include "transfer.h"
 
+#ifdef NO_LINUX
+bool cDvbDevice::Initialize(void) {
+        fprintf(stderr,"No Linux defined, no linux devices compiled in.\n");        
+        return true;
+}
+     
+void cDvbDevice::SetTransferModeForDolbyDigital(int Mode){
+
+};
+
+
+#else
 #define DO_REC_AND_PLAY_ON_PRIMARY_DEVICE 1
 #define DO_MULTIPLE_RECORDINGS 1
 //#define DO_MULTIPLE_CA_CHANNELS
@@ -1206,3 +1222,5 @@ bool cDvbDevice::GetTSPacket(uchar *&Data)
      }
   return false;
 }
+
+#endif // NO_LINUX

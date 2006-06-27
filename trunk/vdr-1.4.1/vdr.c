@@ -31,8 +31,10 @@
 #include <pwd.h>
 #include <signal.h>
 #include <stdlib.h>
+#ifndef NO_LINUX
 #include <sys/capability.h>
 #include <sys/prctl.h>
+#endif
 #include <termios.h>
 #include <unistd.h>
 #include "audio.h"
@@ -102,16 +104,19 @@ static bool SetUser(const char *UserName)
         fprintf(stderr, "vdr: cannot set user id %u: %s\n", (unsigned int)user->pw_uid, strerror(errno));
         return false;
         }
+#ifndef NO_LINUX
      if (prctl(PR_SET_DUMPABLE, 2, 0, 0, 0) < 0) {
         fprintf(stderr, "vdr: warning - cannot set dumpable: %s\n", strerror(errno));
         // always non-fatal, and will not work with kernel < 2.6.13
         }
+#endif
      }
   return true;
 }
 
 static bool SetCapSysTime(void)
 {
+#ifndef NO_LINUX
   // drop all capabilities except cap_sys_time
   cap_t caps = cap_from_text("= cap_sys_time=ep");
   if (!caps) {
@@ -124,16 +129,19 @@ static bool SetCapSysTime(void)
      return false;
      }
   cap_free(caps);
+#endif
   return true;
 }
 
 static bool SetKeepCaps(bool On)
 {
+#ifndef NO_LINUX
   // set keeping capabilities during setuid() on/off
   if (prctl(PR_SET_KEEPCAPS, On ? 1 : 0, 0, 0, 0) != 0) {
      fprintf(stderr, "vdr: prctl failed\n");
      return false;
      }
+#endif
   return true;
 }
 
@@ -243,7 +251,7 @@ int main(int argc, char *argv[])
           case 'c': ConfigDirectory = optarg;
                     break;
           case 'd': DaemonMode = true; break;
-          case 'D': if (isnumber(optarg)) {
+          case 'D': if (vdr_isnumber(optarg)) {
                        int n = atoi(optarg);
                        if (0 <= n && n < MAXDEVICES) {
                           cDevice::SetUseDevice(n);
@@ -263,13 +271,13 @@ int main(int argc, char *argv[])
                       char *p = strchr(optarg, '.');
                       if (p)
                          *p = 0;
-                      if (isnumber(optarg)) {
+                      if (vdr_isnumber(optarg)) {
                          int l = atoi(optarg);
                          if (0 <= l && l <= 3) {
                             SysLogLevel = l;
                             if (!p)
                                break;
-                            if (isnumber(p + 1)) {
+                            if (vdr_isnumber(p + 1)) {
                                int l = atoi(p + 1);
                                if (0 <= l && l <= 7) {
                                   int targets[] = { LOG_LOCAL0, LOG_LOCAL1, LOG_LOCAL2, LOG_LOCAL3, LOG_LOCAL4, LOG_LOCAL5, LOG_LOCAL6, LOG_LOCAL7 };
@@ -300,7 +308,7 @@ int main(int argc, char *argv[])
           case 'n' | 0x100:
                     UseKbd = false;
                     break;
-          case 'p': if (isnumber(optarg))
+          case 'p': if (vdr_isnumber(optarg))
                        SVDRPport = atoi(optarg);
                     else {
                        fprintf(stderr, "vdr: invalid port number: %s\n", optarg);
@@ -334,7 +342,7 @@ int main(int argc, char *argv[])
                     while (optarg && *optarg && optarg[strlen(optarg) - 1] == '/')
                           optarg[strlen(optarg) - 1] = 0;
                     break;
-          case 'w': if (isnumber(optarg)) { int t = atoi(optarg);
+          case 'w': if (vdr_isnumber(optarg)) { int t = atoi(optarg);
                        if (t >= 0) {
                           WatchdogTimeout = t;
                           break;
@@ -477,10 +485,12 @@ int main(int argc, char *argv[])
      }
   else if (Terminal) {
      // Claim new controlling terminal
-     stdin  = freopen(Terminal, "r", stdin);
-     stdout = freopen(Terminal, "w", stdout);
-     stderr = freopen(Terminal, "w", stderr);
-     HasStdin = true;
+    
+     // FIXME !!!
+     //stdin  = freopen(Terminal, "r", stdin);
+     //stdout = freopen(Terminal, "w", stdout);
+     //stderr = freopen(Terminal, "w", stderr);
+     //HasStdin = true;
      }
 
   isyslog("VDR version %s started", VDRVERSION);
@@ -624,9 +634,9 @@ int main(int argc, char *argv[])
   // Remote Controls:
   if (RcuDevice)
      new cRcuRemote(RcuDevice);
-  if (LircDevice)
+/*  if (LircDevice)
      new cLircRemote(LircDevice);
-  if (!DaemonMode && HasStdin && UseKbd)
+*/  if (!DaemonMode && HasStdin && UseKbd)
      new cKbdRemote;
   Interface->LearnKeys();
 

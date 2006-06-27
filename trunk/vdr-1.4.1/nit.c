@@ -8,7 +8,11 @@
  */
 
 #include "nit.h"
+#ifdef NO_LINUX
+#include "macosfrontend.h"
+#else
 #include <linux/dvb/frontend.h>
+#endif
 #include "channels.h"
 #include "eitscan.h"
 #include "libsi/section.h"

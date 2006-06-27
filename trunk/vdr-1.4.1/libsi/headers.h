@@ -17,7 +17,7 @@
 #ifndef LIBSI_HEADERS_H
 #define LIBSI_HEADERS_H
 
-#include <endian.h>
+#include <machine/endian.h>
 
 namespace SI {
 

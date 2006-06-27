@@ -25,8 +25,9 @@ cSource::~cSource()
 
 bool cSource::Parse(const char *s)
 {
-  char *codeBuf = NULL;
-  if (2 == sscanf(s, "%a[^ ] %a[^\n]", &codeBuf, &description))
+  char *codeBuf = (char *) malloc(60);
+  description = (char*) malloc(120);
+  if (2 == sscanf(s, "%60[^ ] %120[^\n]", codeBuf, description))
      code = FromString(codeBuf);
   free(codeBuf);
   return code != stNone && description && *description;

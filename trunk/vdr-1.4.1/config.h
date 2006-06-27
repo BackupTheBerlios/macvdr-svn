@@ -16,8 +16,13 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+
+#include <netinet/in.h>
+#include <stdint.h>
+
 #include "i18n.h"
 #include "tools.h"
+
 
 // VDR's own version number:
 

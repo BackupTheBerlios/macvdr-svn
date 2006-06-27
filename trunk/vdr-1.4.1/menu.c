@@ -29,6 +29,7 @@
 #include "transfer.h"
 #include "videodir.h"
 
+
 #define MAXWAIT4EPGINFO   3 // seconds
 #define MODETIMEOUT       3 // seconds
 #define DISKSPACECHEK     5 // seconds between disk space checks in the main menu
@@ -1578,7 +1579,7 @@ eOSState cMenuCommands::ProcessKey(eKeys Key)
 }
 
 // --- cMenuCam --------------------------------------------------------------
-
+/*
 cMenuCam::cMenuCam(cCiMenu *CiMenu)
 :cOsdMenu("")
 {
@@ -1659,9 +1660,9 @@ eOSState cMenuCam::ProcessKey(eKeys Key)
      }
   return state;
 }
-
+*/
 // --- cMenuCamEnquiry -------------------------------------------------------
-
+/*
 cMenuCamEnquiry::cMenuCamEnquiry(cCiEnquiry *CiEnquiry)
 :cOsdMenu("", 1)
 {
@@ -1676,17 +1677,17 @@ cMenuCamEnquiry::cMenuCamEnquiry(cCiEnquiry *CiEnquiry)
   Add(new cMenuEditNumItem("", input, Length, ciEnquiry->Blind()));
   Display();
 }
-
+*/
 cMenuCamEnquiry::~cMenuCamEnquiry()
 {
-  if (!replied)
-     ciEnquiry->Abort();
+  //if (!replied)
+  //   ciEnquiry->Abort();
   free(input);
-  delete ciEnquiry;
+  //delete ciEnquiry;
 }
 
 eOSState cMenuCamEnquiry::Reply(void)
-{
+{/*
   if (ciEnquiry->ExpectedLength() < 0xFF && int(strlen(input)) != ciEnquiry->ExpectedLength()) {
      char buffer[64];
      snprintf(buffer, sizeof(buffer), tr("Please enter %d digits!"), ciEnquiry->ExpectedLength());
@@ -1694,14 +1695,14 @@ eOSState cMenuCamEnquiry::Reply(void)
      return osContinue;
      }
   ciEnquiry->Reply(input);
-  replied = true;
+  replied = true;*/
   return osEnd;
 }
 
 eOSState cMenuCamEnquiry::ProcessKey(eKeys Key)
 {
   eOSState state = cOsdMenu::ProcessKey(Key);
-
+/*
   if (state == osUnknown) {
      switch (Key) {
        case kOk:     return Reply();
@@ -1712,7 +1713,7 @@ eOSState cMenuCamEnquiry::ProcessKey(eKeys Key)
      ciEnquiry->Cancel();
      replied = true;
      return osEnd;
-     }
+     }*/
   return state;
 }
 
@@ -1723,6 +1724,7 @@ cOsdObject *CamControl(void)
   for (int d = 0; d < cDevice::NumDevices(); d++) {
       cDevice *Device = cDevice::GetDevice(d);
       if (Device) {
+/*
          cCiHandler *CiHandler = Device->CiHandler();
          if (CiHandler && CiHandler->HasUserIO()) {
             cCiMenu *CiMenu = CiHandler->GetMenu();
@@ -1733,7 +1735,7 @@ cOsdObject *CamControl(void)
                if (CiEnquiry)
                   return new cMenuCamEnquiry(CiEnquiry);
                }
-            }
+            }*/
          }
       }
   return NULL;
@@ -2470,10 +2472,10 @@ cMenuSetupCICAMItem::cMenuSetupCICAMItem(int Device, cCiHandler *CiHandler, int 
 {
   ciHandler = CiHandler;
   slot = Slot;
-  char buffer[32];
+  char buffer[32];/*
   const char *CamName = CiHandler->GetCamName(slot);
   snprintf(buffer, sizeof(buffer), "%s%d %d\t%s", tr("Setup.CICAM$CICAM DVB"), Device + 1, slot + 1, CamName ? CamName : "-");
-  SetText(buffer);
+*/  SetText(buffer);
 }
 
 class cMenuSetupCICAM : public cMenuSetupBase {
@@ -2490,12 +2492,12 @@ cMenuSetupCICAM::cMenuSetupCICAM(void)
   SetSection(tr("CICAM"));
   for (int d = 0; d < cDevice::NumDevices(); d++) {
       cDevice *Device = cDevice::GetDevice(d);
-      if (Device) {
+      if (Device) {/*
          cCiHandler *CiHandler = Device->CiHandler();
          if (CiHandler) {
             for (int Slot = 0; Slot < CiHandler->NumSlots(); Slot++)
                 Add(new cMenuSetupCICAMItem(Device->CardIndex(), CiHandler, Slot));
-            }
+            }*/
          }
       }
   SetHelp(tr("Button$Menu"), tr("Button$Reset"));
@@ -2505,13 +2507,14 @@ eOSState cMenuSetupCICAM::Menu(void)
 {
   cMenuSetupCICAMItem *item = (cMenuSetupCICAMItem *)Get(Current());
   if (item) {
-     if (item->CiHandler()->EnterMenu(item->Slot())) {
+      if (0);
+/*     if (item->CiHandler()->EnterMenu(item->Slot())) {
         Skins.Message(mtWarning, tr("Opening CAM menu..."));
         time_t t = time(NULL);
         while (time(NULL) - t < MAXWAITFORCAMMENU && !item->CiHandler()->HasUserIO())
               item->CiHandler()->Process();
         return osEnd; // the CAM menu will be executed explicitly from the main loop
-        }
+        }*/
      else
         Skins.Message(mtError, tr("Can't open CAM menu!"));
      }
@@ -2523,13 +2526,14 @@ eOSState cMenuSetupCICAM::Reset(void)
   cMenuSetupCICAMItem *item = (cMenuSetupCICAMItem *)Get(Current());
   if (item) {
      Skins.Message(mtWarning, tr("Resetting CAM..."));
+/*
      if (item->CiHandler()->Reset(item->Slot())) {
         Skins.Message(mtInfo, tr("CAM has been reset"));
         return osEnd;
         }
      else
         Skins.Message(mtError, tr("Can't reset CAM!"));
-     }
+  */   }
   return osContinue;
 }
 

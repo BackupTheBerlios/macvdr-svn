@@ -8,7 +8,13 @@
  */
 
 #include "channels.h"
+
+#ifndef NO_LINUX
 #include <linux/dvb/frontend.h>
+#else
+#include "macosfrontend.h"
+#endif
+
 #include <ctype.h>
 #include "device.h"
 #include "epg.h"
@@ -134,7 +140,8 @@ tChannelID tChannelID::FromString(const char *s)
   int tid;
   int sid;
   int rid = 0;
-  int fields = sscanf(s, "%a[^-]-%d-%d-%d-%d", &sourcebuf, &nid, &tid, &sid, &rid);
+  sourcebuf = (char*) malloc(50);
+  int fields = sscanf(s, "%50[^-]-%d-%d-%d-%d", sourcebuf, &nid, &tid, &sid, &rid);
   if (fields == 4 || fields == 5) {
      int source = cSource::FromString(sourcebuf);
      free(sourcebuf);
@@ -700,13 +707,13 @@ bool cChannel::Parse(const char *s)
      }
   else {
      groupSep = false;
-     char *namebuf = NULL;
-     char *sourcebuf = NULL;
-     char *parambuf = NULL;
-     char *vpidbuf = NULL;
-     char *apidbuf = NULL;
-     char *caidbuf = NULL;
-     int fields = sscanf(s, "%a[^:]:%d :%a[^:]:%a[^:] :%d :%a[^:]:%a[^:]:%d :%a[^:]:%d :%d :%d :%d ", &namebuf, &frequency, &parambuf, &sourcebuf, &srate, &vpidbuf, &apidbuf, &tpid, &caidbuf, &sid, &nid, &tid, &rid);
+     char *namebuf = (char *)malloc(60);
+     char *sourcebuf = (char *)malloc(60);
+     char *parambuf = (char *)malloc(60);
+     char *vpidbuf = (char *)malloc(60);
+     char *apidbuf = (char *)malloc(60);
+     char *caidbuf = (char *)malloc(60);
+     int fields = sscanf(s, "%60[^:]:%d :%60[^:]:%60[^:] :%d :%60[^:]:%60[^:]:%d :%60[^:]:%d :%d :%d :%d ", namebuf, &frequency, parambuf, sourcebuf, &srate, vpidbuf, apidbuf, &tpid, caidbuf, &sid, &nid, &tid, &rid);
      if (fields >= 9) {
         if (fields == 9) {
            // allow reading of old format

@@ -10,8 +10,8 @@
 #ifndef __REMUX_H
 #define __REMUX_H
 
-#include <time.h> //XXX FIXME: DVB/linux/dvb/dmx.h should include <time.h> itself!!!
-#include <linux/dvb/dmx.h>
+//#include <time.h> //XXX FIXME: DVB/linux/dvb/dmx.h should include <time.h> itself!!!
+//#include <linux/dvb/dmx.h>
 #include "ringbuffer.h"
 #include "tools.h"
 

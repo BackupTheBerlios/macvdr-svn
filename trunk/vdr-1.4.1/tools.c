@@ -15,13 +15,22 @@ extern "C" {
 #ifdef boolean
 #define HAVE_BOOLEAN
 #endif
+#ifndef NO_LINUX
 #include <jpeglib.h>
+#endif
 #undef boolean
 }
 #include <stdarg.h>
 #include <stdlib.h>
 #include <sys/time.h>
+
+#ifdef NO_LINUX
+#include <sys/param.h>
+#include <sys/mount.h>
+#else
 #include <sys/vfs.h>
+#endif
+
 #include <time.h>
 #include <unistd.h>
 #include <utime.h>
@@ -257,7 +266,7 @@ int numdigits(int n)
   return strlen(buf);
 }
 
-bool isnumber(const char *s)
+bool vdr_isnumber(const char *s)
 {
   if (!*s)
      return false;
@@ -513,8 +522,8 @@ bool SpinUpDisk(const char *FileName)
          int f = open(buf, O_WRONLY | O_CREAT, DEFFILEMODE);
          // O_SYNC doesn't work on all file systems
          if (f >= 0) {
-            if (fdatasync(f) < 0)
-               LOG_ERROR_STR(buf);
+            //if (fdatasync(f) < 0)
+            //   LOG_ERROR_STR(buf);
             close(f);
             remove(buf);
             gettimeofday(&tp2, NULL);
@@ -672,6 +681,8 @@ cString TimeString(time_t t)
   return buf;
 }
 
+#ifndef NO_LINUX
+
 // --- RgbToJpeg -------------------------------------------------------------
 
 #define JPEGCOMPRESSMEM 500000
@@ -758,6 +769,7 @@ uchar *RgbToJpeg(uchar *Mem, int Width, int Height, int &Size, int Quality)
   Size = jcd.size;
   return jcd.mem;
 }
+#endif
 
 // --- cBase64Encoder --------------------------------------------------------
 
@@ -826,8 +838,14 @@ cReadLine::~cReadLine()
 
 char *cReadLine::Read(FILE *f)
 {
-  int n = getline(&buffer, &size, f);
-  if (n > 0) {
+  //int n = getline(&buffer, &size, f);
+  int n=200;
+  if (!buffer)
+      buffer = (char*)malloc(n);
+ 
+  // FIXME!!! feof()? 
+  fgets(buffer,n,f);
+  if (n > 0 && !feof(f) ) {
      n--;
      if (buffer[n] == '\n') {
         buffer[n] = 0;
@@ -1060,7 +1078,7 @@ bool cSafeFile::Close(void)
 
 // --- cUnbufferedFile -------------------------------------------------------
 
-#define USE_FADVISE
+//#define USE_FADVISE
 
 #define WRITE_BUFFER KILOBYTE(800)
 
@@ -1121,8 +1139,12 @@ void cUnbufferedFile::SetReadAhead(size_t ra)
 
 int cUnbufferedFile::FadviseDrop(off_t Offset, off_t Len)
 {
+#ifdef USE_FADVISE
   // rounding up the window to make sure that not PAGE_SIZE-aligned data gets freed.
   return posix_fadvise(fd, Offset - (FADVGRAN - 1), Len + (FADVGRAN - 1) * 2, POSIX_FADV_DONTNEED);
+#else
+  return 1;
+#endif
 }
 
 off_t cUnbufferedFile::Seek(off_t Offset, int Whence)

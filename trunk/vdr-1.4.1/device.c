@@ -185,7 +185,7 @@ cDevice::~cDevice()
   Detach(player);
   for (int i = 0; i < MAXRECEIVERS; i++)
       Detach(receiver[i]);
-  delete ciHandler;
+  //delete ciHandler;
   delete nitFilter;
   delete sdtFilter;
   delete patFilter;
@@ -415,8 +415,8 @@ bool cDevice::AddPid(int Pid, ePidType PidType)
               DelPid(Pid, PidType);
               return false;
               }
-           if (ciHandler)
-              ciHandler->SetPid(Pid, true);
+           /*if (ciHandler)
+              ciHandler->SetPid(Pid, true);*/
            }
         PRINTPIDS("a");
         return true;
@@ -444,8 +444,8 @@ bool cDevice::AddPid(int Pid, ePidType PidType)
            DelPid(Pid, PidType);
            return false;
            }
-        if (ciHandler)
-           ciHandler->SetPid(Pid, true);
+        /*if (ciHandler)
+           ciHandler->SetPid(Pid, true);*/
         }
      }
   return true;
@@ -472,8 +472,8 @@ void cDevice::DelPid(int Pid, ePidType PidType)
            if (pidHandles[n].used == 0) {
               pidHandles[n].handle = -1;
               pidHandles[n].pid = 0;
-              if (ciHandler)
-                 ciHandler->SetPid(Pid, false);
+              /*if (ciHandler)
+                 ciHandler->SetPid(Pid, false);*/
               }
            }
         PRINTPIDS("E");
@@ -639,7 +639,7 @@ eSetChannelResult cDevice::SetChannel(const cChannel *Channel, bool LiveView)
         }
      // Tell the ciHandler about the channel switch and add all PIDs of this
      // channel to it, for possible later decryption:
-     if (ciHandler) {
+/*     if (ciHandler) {
         ciHandler->SetSource(Channel->Source(), Channel->Transponder());
 // Men at work - please stand clear! ;-)
 #ifdef XXX_DO_MULTIPLE_CA_CHANNELS
@@ -655,7 +655,7 @@ eSetChannelResult cDevice::SetChannel(const cChannel *Channel, bool LiveView)
            dsyslog("CanDecrypt %d %d %d %s", CardIndex() + 1, CanDecrypt, Channel->Number(), Channel->Name());//XXX
            }
 #endif
-        }
+        }*/
      if (NeedsDetachReceivers)
         DetachAllReceivers();
      if (SetChannelDevice(Channel, LiveView)) {
@@ -665,8 +665,8 @@ eSetChannelResult cDevice::SetChannel(const cChannel *Channel, bool LiveView)
            sectionHandler->SetStatus(true);
            }
         // Start decrypting any PIDs that might have been set in SetChannelDevice():
-        if (ciHandler)
-           ciHandler->StartDecrypting();
+        /*if (ciHandler)
+           ciHandler->StartDecrypting();*/
         }
      else
         Result = scrFailed;
@@ -1249,8 +1249,8 @@ bool cDevice::AttachReceiver(cReceiver *Receiver)
          Unlock();
          if (!Running())
             Start();
-         if (ciHandler)
-            ciHandler->StartDecrypting();
+         /*if (ciHandler)
+            ciHandler->StartDecrypting();*/
          return true;
          }
       }
@@ -1277,8 +1277,8 @@ void cDevice::Detach(cReceiver *Receiver)
       else if (receiver[i])
          receiversLeft = true;
       }
-  if (ciHandler)
-     ciHandler->StartDecrypting();
+  /*if (ciHandler)
+     ciHandler->StartDecrypting();*/
   if (!receiversLeft)
      Cancel(3);
 }

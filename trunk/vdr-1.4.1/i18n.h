@@ -12,6 +12,8 @@
 
 #include <stdio.h>
 
+#include "MacOs.h"
+
 const int I18nNumLanguages = 21;
 
 typedef const char *tI18nPhrase[I18nNumLanguages];

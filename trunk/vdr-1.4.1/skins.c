@@ -7,6 +7,8 @@
  * $Id: skins.c 1.11 2006/06/03 14:39:14 kls Exp $
  */
 
+#include "MacOs.h"
+
 #include "skins.h"
 #include "interface.h"
 #include "status.h"

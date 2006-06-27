@@ -20,6 +20,7 @@
 #include <syslog.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/syslimits.h>
 
 typedef unsigned char uchar;
 typedef unsigned long long int uint64;
@@ -104,7 +105,7 @@ bool startswith(const char *s, const char *p);
 bool endswith(const char *s, const char *p);
 bool isempty(const char *s);
 int numdigits(int n);
-bool isnumber(const char *s);
+bool vdr_isnumber(const char *s);
 cString itoa(int n);
 cString AddDirectory(const char *DirName, const char *FileName);
 int FreeDiskSpaceMB(const char *Directory, int *UsedMB = NULL);

@@ -8,7 +8,8 @@
  */
 
 #include "pat.h"
-#include <malloc.h>
+#include <stdlib.h>
+//#include <malloc.h>
 #include "channels.h"
 #include "libsi/section.h"
 #include "libsi/descriptor.h"

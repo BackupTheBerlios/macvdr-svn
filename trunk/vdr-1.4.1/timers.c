@@ -256,7 +256,7 @@ bool cTimer::Parse(const char *s)
      result = ParseDay(daybuffer, day, weekdays);
      strn0cpy(file, filebuffer, MaxFileName);
      strreplace(file, '|', ':');
-     if (isnumber(channelbuffer))
+     if (vdr_isnumber(channelbuffer))
         channel = Channels.GetByNumber(atoi(channelbuffer));
      else
         channel = Channels.GetByChannelID(tChannelID::FromString(channelbuffer), true, true);

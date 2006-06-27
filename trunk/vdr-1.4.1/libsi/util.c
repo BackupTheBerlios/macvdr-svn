@@ -186,6 +186,7 @@ void Parsable::CheckParse() {
    }
 }
 
+#undef time_second
 //taken and adapted from libdtv, (c) Rolf Hakenes and VDR, (c) Klaus Schmidinger
 time_t DVBTime::getTime(unsigned char date_hi, unsigned char date_lo, unsigned char time_hour, unsigned char time_minute, unsigned char time_second) {
    u_int16_t mjd = date_hi << 8 | date_lo;

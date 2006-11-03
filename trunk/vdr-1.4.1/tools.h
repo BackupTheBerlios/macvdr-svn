@@ -323,10 +323,10 @@ public:
 class cHashObject : public cListObject {
   friend class cHashBase;
 private:
-  unsigned int id;
+  unsigned int idd;
   cListObject *object;
 public:
-  cHashObject(cListObject *Object, unsigned int Id) { object = Object; id = Id; }
+  cHashObject(cListObject *Object, unsigned int Id) { object = Object; idd = Id; }
   cListObject *Object(void) { return object; }
   };
 

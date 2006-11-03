@@ -1562,7 +1562,7 @@ cListObject *cHashBase::Get(unsigned int Id) const
   cList<cHashObject> *list = hashTable[hashfn(Id)];
   if (list) {
      for (cHashObject *hob = list->First(); hob; hob = list->Next(hob)) {
-         if (hob->id == Id)
+         if (hob->idd == Id)
             return hob->object;
          }
      }

@@ -222,12 +222,19 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 	};
 
 	Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
+
 //	TSPacketCounter++;
 //	return true;
-//	return false;
+
 	TSHeader & tsh = *(TSHeader*)Data;
-	if (tsh.syncByte != 0x47) return 0;
+	if (tsh.syncByte != 0x47){
+		Data = NULL;
+		return true;
+	 }
 	int pid = tsh.pid;
+
+//	TSPacketCounter++;
+//	return true;
 
 	Data = NULL;
 //	AllTSPkg++;
@@ -248,7 +255,7 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
 	printf("OpenFilter pid %x, Tid %x Mask %x\n",Pid, Tid, Mask);
 //	FH->CreatePipe(Pid, Tid);
-	return 0;
+	return -1;
 }
 #endif
 

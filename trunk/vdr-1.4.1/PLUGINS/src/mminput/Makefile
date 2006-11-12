@@ -24,8 +24,8 @@ VDRDIR = ../../..
 LIBDIR = ../../lib
 TMPDIR = /tmp
 
-#UDDIR = /Users/rieke/Projekte/MMInput_new/DVB/
-UDDIR = /Users/martin/vdr/MacDVB/
+UDDIR = /Users/rieke/Projekte/MMInput_new/DVB/
+#UDDIR = /Users/martin/vdr/MacDVB/
 frameworks= -framework Foundation -framework IOKit
 
 ### Allow user defined options to overwrite defaults:
@@ -49,7 +49,7 @@ DEFINES += -D_GNU_SOURCE -DPLUGIN_NAME_I18N='"$(PLUGIN)"'
 
 ### The object files (add further files here):
 
-OBJS = $(PLUGIN).o MMInputLib.o device.o setup.o FilterHandle.o
+OBJS = $(PLUGIN).o MMInputLib.o device.o setup.o FilterHandle.o TableBuilder.o
 
 ### Explicit rules:
 
@@ -61,7 +61,7 @@ OBJS = $(PLUGIN).o MMInputLib.o device.o setup.o FilterHandle.o
 MAKEDEP = $(CXX) -MM -MG
 DEPFILE = .dependencies
 $(DEPFILE): Makefile
-	@$(MAKEDEP) $(DEFINES) $(INCLUDES) $(OBJS:%.o=%.cpp) > $@
+	$(MAKEDEP) $(DEFINES) $(INCLUDES) $(OBJS:%.o=%.cpp) > $@
 
 -include $(DEPFILE)
 

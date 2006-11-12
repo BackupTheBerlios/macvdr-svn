@@ -7,7 +7,8 @@
 
 #define MAXDEVICEFilter 16
 
-#include<vector>
+#include <vdr/tools.h>
+#include "TableBuilder.hpp"
 
 class cFilterHandle {
 
@@ -19,17 +20,17 @@ private:
 	int Whandle;
 	int length;
 	int Tid;
-	int buf[4096];
+	TableBuilder* tb;
 	};
 	
-	FilterPids FH[MAXDEVICEFilter];
+	FilterPids* FH;
 	bool ClosePipe(int Pid, int tid);
-
+	void sendTable();
 public:
 	int CreatePipe(int Pid, int tid);
 	cFilterHandle();
 	~cFilterHandle();
-	int Process(int Pid, char* buf);
+	int Process(uchar* buf);
 };
 
 #endif // VDR_FILTERHANDLE_H

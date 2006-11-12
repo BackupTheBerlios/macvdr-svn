@@ -2,7 +2,14 @@
 #include <unistd.h>
 #include <string.h>
 
+//#include <vdr/tools.h>
+#include "DPConnect/TSHandler.hpp"
+#include "DPConnect/Streaming.hpp"
+
 cFilterHandle::cFilterHandle(){
+	
+	FH = new FilterPids[MAXDEVICEFilter];
+	
 	for(int index = 0; index < MAXDEVICEFilter; index++){
 		FH[index].PidNum = -1;
 		FH[index].Whandle = -1;
@@ -33,50 +40,40 @@ int cFilterHandle::CreatePipe(int Pid, int Tid){
 		FH[index].Rhandle = fd[0]; // store handle for reading
 		FH[index].Tid = Tid;
 		FH[index].length = 0;
+		FH[index].tb = new TableBuilder();
+		
 	printf("Create Pipe for pid %x, Tid %x \n",FH[index].PidNum, FH[index].Tid);		
 		return FH[index].Rhandle; // give back handle for reading
 	}
 	return -1;
 }
 
-int cFilterHandle::Process(int Pid, char* buf){
-	int length = 0;
-	bool accept = false;
-	if(Pid == 0x12 && buf[0] == 0x4e){
-	printf("find pid and tid pid %x and tid %x\n",0x12,0x4e);
+int cFilterHandle::Process(uchar* data){
+int accept = 0;
+		TSHeader & tsh = *(TSHeader*)data;
+	if (tsh.syncByte != 0x47) return 0;
+	//if (tsh.transportErr) return;
+
+	uint8 * payload = data + 4;
+	
+	uint32 pid = tsh.pid;
+	
+	// should do a lot better than this switch!
+	// set a function pointer to represent the current state...
+	
+	switch (pid){
+	case (0x12):{
+		if (tsh.scrambling != 0) return 0;
+//		switch(tid){
+//			case (0x4e):{
+//			}
+//		}
+	
 	}
-	for(int index = 0;index < MAXDEVICEFilter; index++){
-	if(FH[index].PidNum == -1) break;
-		if(Pid == FH[index].PidNum && buf[0] == FH[index].Tid){
-			accept = true;
-//			printf("find pid %x and tid %x\n",FH[index].PidNum,FH[index].Tid);
-			if((FH[index].length == 0 && buf[1] != 0x40) || FH[index].length != 0 ){
-				printf("section starts here for pid %x and tid %x Handle %d\n",FH[index].PidNum,FH[index].Tid, index);
-				int len = (((buf[1] & 0x0F) << 8) | (buf[2] & 0xFF)) + 3;
-				if((len - length) > (188-4)){
-					length = 188 - 4;
-					memcpy(FH[index].buf + FH[index].length, buf + 3, length);
-				}
-				else{
-					length = len - length;
-					memcpy(FH[index].buf + FH[index].length, buf + 3, length);
-					if (write(FH[index].Whandle,FH[index].buf, FH[index].length) <= FH[index].length){
-						if(errno == EPIPE){
-							printf("FilterHandle: write to pipe failed.\n");
-							close(FH[index].Whandle);
-							FH[index].PidNum = -1;
-							FH[index].Tid = -1;
-							FH[index].Whandle = -1;
-							FH[index].Rhandle = -1;
-							FH[index].length = 0;
-						}
-						else{
-							FH[index].length = 0;						
-						}
-					}
-				}
-			}
-		}
+	default:{
+	return 0;
 	}
+	}
+
 	return accept;
 }

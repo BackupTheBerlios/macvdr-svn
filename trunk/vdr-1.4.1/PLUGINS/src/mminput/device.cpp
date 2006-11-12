@@ -6,9 +6,8 @@
 #include "setup.hpp"
 #include "menu.hpp"
 
-//#include "DPConnect/TSHandler.hpp"
-//#include "DPConnect/Streaming.hpp"
-//#include "DPConnect/Streaming.hpp"
+#include "DPConnect/TSHandler.hpp"
+#include "DPConnect/Streaming.hpp"
 
 #include <vdr/channels.h>
 #include <vdr/ringbuffer.h>
@@ -24,7 +23,6 @@ using namespace std;
 #define VIDEOBUFSIZE MEGABYTE(3)
 
 static NSAutoreleasePool * pool = 0;
-
 
 cMMInputDevice *cMMInputDevice::m_Device = NULL;
 
@@ -42,7 +40,14 @@ cMMInputDevice::cMMInputDevice(void) {
 	}
 	m_Device = this;
 	StartSectionHandler();
-	FH = new cFilterHandle;
+//	FH = new cFilterHandle;
+	
+	maxChPids = defChPids;
+	chPids = 0;
+	
+	// only for pid test
+	AllTSPkg = 0;
+	SelTSPkg = 0;
 }
 
 cMMInputDevice::~cMMInputDevice() {
@@ -53,6 +58,8 @@ cMMInputDevice::~cMMInputDevice() {
 	giveTuner( pMM );
 
 	[pool release];
+	if(chPids != 0) delete chPids;
+//	delete FH;
 }
 
 bool cMMInputDevice::Ready(void)
@@ -84,21 +91,100 @@ bool cMMInputDevice::ProvidesChannel(const cChannel *Channel, int Priority,
 }
 
 bool cMMInputDevice::SetChannelDevice(const cChannel *Channel, 
-		bool LiveView) {
-		m_Channel = Channel;
+									  bool LiveView) {
+	m_Channel = Channel;
+	// check if array to store the pids exists
+	if(chPids != 0x0){
+		delete chPids;
+		chPids = 0x0;
+		maxChPids = defChPids;
+	}
 	printf("SetChannelDevice Channel: %s, LiveView: %s\n", m_Channel->Name(),
-			LiveView ? "true" : "false");
+		   LiveView ? "true" : "false");
 	return myTune( pMM );
- // tune device
-
+	// tune device
+	
 }
 
 
 bool cMMInputDevice::SetPid(cPidHandle *Handle, int Type, bool On) {
-	printf("MMInput device: SetPid, Pid=%d, Type=%d, On=%d, used=%d\n", Handle->pid, Type, On,
-			Handle->used);
-	return true;
-//	return false;
+	
+	printf("MMInput device: SetPid, Pid=%d", Handle->pid);
+	// check if array, to store the pids for one channel exist allready
+	// if not create one witth default size
+	
+	if(chPids == 0){
+		chPids = new int[maxChPids];
+		for(int i = 0; i < maxChPids; i++){
+			chPids[i] = -1;	
+		}
+	}
+	
+	if(chPids == 0) return false;
+	
+	bool store = false;
+	for(int i = 0; i < maxChPids; i++){
+		if(chPids[i] == Handle->pid){
+			store = true;
+			break;
+		}
+		if(chPids[i] == -1){
+			chPids[i] = Handle->pid;
+			store = true;
+			break;
+		}
+	}
+	
+	// check if the array size is to small
+	if(store == false){
+		int *chPidsTmp = 0x0;
+		chPidsTmp = new int[++maxChPids];
+		if(chPidsTmp == 0){
+			printf("Error. Couldn't resize array to store pids\n");
+			return false;
+		}
+		else{
+			for(int i = 0; i < maxChPids; i++){
+				chPidsTmp[i] = chPids[i];
+			}
+			// delete old array
+			delete chPids;
+			// store new pointer 
+			chPids = chPidsTmp;
+		}
+		chPids[maxChPids-1] = Handle->pid;
+	}
+	/*	
+	printf("MMInput device: SetPid, Pid=%d", Handle->pid);
+		switch(Type){
+			case(ePidType::ptAudio):{
+				printf(", Type= Audio");
+				break;}
+			case(ePidType::ptVideo):{
+				printf(", Type= video");
+				break;}
+			case(ePidType::ptPcr):{
+				printf(", Type= Pcr");
+				break;}
+			case(ePidType::ptTeletext):{
+				printf(", Type= Teletext");
+				break;}
+			case(ePidType::ptDolby):{
+				printf(", Type= Dolby");
+				break;}
+			default:{
+				printf(", Type= Other");
+			}
+				printf("On=%d, used=%d\n",On, Handle->used);
+				return true;
+				*/
+
+	printf("device: SetPid: pids: ");
+			for(int i = 0; i < maxChPids; i++){
+				printf(" %d",chPids[i]);
+			}
+	printf("\n");
+		return true;
 }
 
 bool cMMInputDevice::OpenDvr(void) {
@@ -124,30 +210,45 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 	if(TSPacketCounter == TSPackets){	
 		//		TSPackets=0;
 		TSPackets = pMM->retrieve( m_blobDate, blobSize );
-		//		printf("cMMInputDevice::GetTSPacket: length=%d, count=%d\n",blobSize,TSPackets);
-		//		TSPackets=0;
+//				printf("cMMInputDevice::GetTSPacket: length=%d, count=%d\n",blobSize,TSPackets);
+//				TSPackets=0;
 		TSPacketCounter = 0;
-		if(TSPackets == 0) usleep(13000);
+		if(TSPackets == 0) usleep(83000);
 	}
 	if(TSPackets == 0){
 		Data = NULL;
+//		printf("pid filter rejection: %f\n", (100.0*(AllTSPkg-SelTSPkg)/AllTSPkg));
 		return true;
 	};
+
 	Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
+//	TSPacketCounter++;
+//	return true;
+//	return false;
+	TSHeader & tsh = *(TSHeader*)Data;
+	if (tsh.syncByte != 0x47) return 0;
+	int pid = tsh.pid;
 
-//	if((Data[2] == 0x12) && (Data[3] == 0x4e)){
-//	printf("device: find pid and tid pid %x and tid %x\n",0x12,0x4e);
-//	}
-
-//	FH->Process(Data[2], Data+4);
+	Data = NULL;
+//	AllTSPkg++;
+	for(int i = 0; i < maxChPids; i++ ){
+		if(chPids[i] == pid){
+			Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
+//			SelTSPkg++;
+			break;
+		}
+	}
 	TSPacketCounter++;
+
+//	return FH->Process(Data);
 	return true;
 }
 
 #if VDRVERSNUM >= 10300
 int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
 	printf("OpenFilter pid %x, Tid %x Mask %x\n",Pid, Tid, Mask);
-	FH->CreatePipe(Pid, Tid);
+//	FH->CreatePipe(Pid, Tid);
+	return 0;
 }
 #endif
 
@@ -215,7 +316,7 @@ bool cMMInputDevice::myTune( MMInputDevice * pMM )
 	[pDict setObject:[NSNumber numberWithUnsignedLong:m_Channel->Guard()] forKey:@"GuardInterval"];	
 	[pDict setObject:[NSNumber numberWithUnsignedLong:m_Channel->Frequency()*1000] forKey:@"FrequencyHz"];
 
-	NSDictionary * pConstDict = pDict;
+//	NSDictionary * pConstDict = pDict;
 	
 	//printf( "tuning dictionary: %s\n", [[pConstDict description] lossyCString] );
 	

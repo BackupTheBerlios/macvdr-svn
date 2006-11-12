@@ -7,7 +7,8 @@
 
 #include <vdr/device.h>
 
-#include "Drivers/MMInputFamily/MMInputLib.hpp"
+//#include "Drivers/MMInputFamily/MMInputLib.hpp"
+#include "MMInputLib.hpp"
 
 #import <Foundation/NSDictionary.h>
 #import <Foundation/NSValue.h>
@@ -38,6 +39,14 @@ private:
 	void* m_blobDate;
 	NSMutableDictionary * pDict; // tuningparameters
 	cFilterHandle* FH;
+	
+	int* chPids;
+	int maxChPids;
+	static const int defChPids = 2;
+	
+	// only for pid test
+	int AllTSPkg;
+	int SelTSPkg;
 protected:
 	virtual bool SetChannelDevice(const cChannel *Channel, bool LiveView);
 	virtual bool HasLock(int TimeoutMs) 

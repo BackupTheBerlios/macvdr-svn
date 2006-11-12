@@ -59,6 +59,7 @@ cMMInputDevice::~cMMInputDevice() {
 
 	[pool release];
 	if(chPids != 0) delete chPids;
+	errCounter = 0;
 //	delete FH;
 }
 
@@ -223,8 +224,8 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 
 	Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
 
-//	TSPacketCounter++;
-//	return true;
+	TSPacketCounter++;
+	return true;
 
 	TSHeader & tsh = *(TSHeader*)Data;
 	if (tsh.syncByte != 0x47){
@@ -244,6 +245,17 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 //			SelTSPkg++;
 			break;
 		}
+	}
+	if(Data == NULL){
+		if((errCounter %2001) == 0){
+			printf("device no valid TS packet\n");
+			printf("\tpids: ");
+			for(int i = 0; i < maxChPids; i++ ){
+				printf(" %d",chPids[i]);
+			}	
+			printf(" \n");
+		}
+		errCounter++;
 	}
 	TSPacketCounter++;
 

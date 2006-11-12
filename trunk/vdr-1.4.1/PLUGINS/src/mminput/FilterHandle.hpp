@@ -15,17 +15,18 @@ class cFilterHandle {
 private:
 
 	struct FilterPids{
-	int PidNum;
-	int Rhandle;
-	int Whandle;
-	int length;
-	int Tid;
-	TableBuilder* tb;
+		int PidNum;
+		int Rhandle;
+		int Whandle;
+		int length;
+		int Tid;
+		TableBuilder* tb;
 	};
 	
 	FilterPids* FH;
 	bool ClosePipe(int Pid, int tid);
 	void sendTable();
+
 public:
 	int CreatePipe(int Pid, int tid);
 	cFilterHandle();

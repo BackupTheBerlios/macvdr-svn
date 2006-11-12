@@ -47,6 +47,7 @@ private:
 	// only for pid test
 	int AllTSPkg;
 	int SelTSPkg;
+	int errCounter;
 protected:
 	virtual bool SetChannelDevice(const cChannel *Channel, bool LiveView);
 	virtual bool HasLock(int TimeoutMs) 

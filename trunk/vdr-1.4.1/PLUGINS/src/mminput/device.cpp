@@ -224,8 +224,8 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 
 	Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
 
-	TSPacketCounter++;
-	return true;
+//	TSPacketCounter++;
+//	return true;
 
 	TSHeader & tsh = *(TSHeader*)Data;
 	if (tsh.syncByte != 0x47){

@@ -225,11 +225,11 @@ cString cTimer::PrintFirstDay(void) const
 
 bool cTimer::Parse(const char *s)
 {
-  char *channelbuffer = NULL;
-  char *daybuffer = NULL;
-  char *filebuffer = NULL;
+  char *channelbuffer = (char*)malloc(50);
+  char *daybuffer = (char*)malloc(50);
+  char *filebuffer = (char*)malloc(50);
   free(aux);
-  aux = NULL;
+  aux = (char*)malloc(50);
   //XXX Apparently sscanf() doesn't work correctly if the last %a argument
   //XXX results in an empty string (this first occured when the EIT gathering
   //XXX was put into a separate thread - don't know why this happens...
@@ -246,7 +246,7 @@ bool cTimer::Parse(const char *s)
      s = s2;
      }
   bool result = false;
-  if (8 <= sscanf(s, "%u :%a[^:]:%a[^:]:%d :%d :%d :%d :%a[^:\n]:%a[^\n]", &flags, &channelbuffer, &daybuffer, &start, &stop, &priority, &lifetime, &filebuffer, &aux)) {
+  if (8 <= sscanf(s, "%u :%50[^:]:%50[^:]:%d :%d :%d :%d :%50[^:\n]:%50[^\n]", &flags, channelbuffer, daybuffer, &start, &stop, &priority, &lifetime, filebuffer, aux)) {
      ClrFlags(tfRecording);
      if (aux && !*skipspace(aux)) {
         free(aux);

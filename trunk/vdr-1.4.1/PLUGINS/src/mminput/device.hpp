@@ -27,7 +27,7 @@ class cMMInputDevice: public cDevice {
 	friend class cRemoteRecordings;
 
 private:
-	const cChannel      *m_Channel;
+	cChannel      *m_Channel;
 	cTSBuffer           *m_TSBuffer;
 
 	static cMMInputDevice *m_Device;
@@ -48,8 +48,16 @@ private:
 	int AllTSPkg;
 	int SelTSPkg;
 	int errCounter;
+	
+	bool IsTunedTo(const cChannel *Channel) const;
+	enum eTunerStatus { tsIdle, tsSet, tsTuned, tsLocked };
+
+	eTunerStatus tunerStatus;
+
 protected:
 	virtual bool SetChannelDevice(const cChannel *Channel, bool LiveView);
+	virtual bool cMMInputDevice::HasDecoder() const;
+	virtual int cMMInputDevice::ProvidesCa(const cChannel*) const;
 	virtual bool HasLock(int TimeoutMs) 
 	{
 		//printf("HasLock is %d\n", (ClientSocket.DataSocket(siLive) != NULL));
@@ -83,7 +91,7 @@ public:
 	
 	MMInputDevice * grabTuner( int mmindex );
 	void giveTuner( MMInputDevice * pMM );
-	bool myTune( MMInputDevice * pMM );
+	bool myTune( MMInputDevice * pMM , const cChannel *Channel);
 	
 	static cMMInputDevice *GetDevice(void) { return m_Device; }
 };

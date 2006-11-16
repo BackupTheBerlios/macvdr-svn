@@ -24,11 +24,12 @@ private:
 	};
 	
 	FilterPids* FH;
+	int maxFilter;
 	bool ClosePipe(int Pid, int tid);
 	void sendTable();
 
 public:
-	int CreatePipe(int Pid, int tid);
+	int CreateFilter(int Pid, int tid);
 	cFilterHandle();
 	~cFilterHandle();
 	int Process(uchar* buf);

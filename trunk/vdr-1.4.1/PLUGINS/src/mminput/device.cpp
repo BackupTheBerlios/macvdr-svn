@@ -192,7 +192,7 @@ bool cMMInputDevice::IsTunedTo(const cChannel *Channel) const {
 
 bool cMMInputDevice::SetPid(cPidHandle *Handle, int Type, bool On) {
 	
-	printf("MMInput device: SetPid, Pid=%d", Handle->pid);
+	printf("MMInput device: SetPid, Pid=%d\n", Handle->pid);
 	// check if array, to store the pids for one channel exist allready
 	// if not create one witth default size
 	

@@ -3127,12 +3127,17 @@ void cDisplayChannel::Refresh(void)
 
 cChannel *cDisplayChannel::NextAvailableChannel(cChannel *Channel, int Direction)
 {
+  bool notavailable=false;
   if (Direction) {
      while (Channel) {
            Channel = Direction > 0 ? Channels.Next(Channel) : Channels.Prev(Channel);
            if (Channel && !Channel->GroupSep() && (cDevice::PrimaryDevice()->ProvidesChannel(Channel, Setup.PrimaryLimit) || cDevice::GetDevice(Channel, 0)))
               return Channel;
-           }
+            else if (Channel && !Channel->GroupSep() && !notavailable ) {
+              Skins.Message(mtInfo,tr("Channel not available!"));
+              notavailable=true;
+              }
+            }
      }
   return NULL;
 }

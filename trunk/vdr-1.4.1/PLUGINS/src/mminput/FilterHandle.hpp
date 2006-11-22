@@ -5,10 +5,12 @@
 #ifndef VDR_FILTERHANDLE_H
 #define VDR_FILTERHANDLE_H
 
-#define MAXDEVICEFilter 16
+#define MAXDEVICEFILTER 32
 
 #include <vdr/tools.h>
 #include "TableBuilder.hpp"
+
+class cSectionFilter;
 
 class cFilterHandle {
 
@@ -20,10 +22,10 @@ private:
 		int Whandle;
 		int length;
 		int Tid;
-		TableBuilder* tb;
+		cSectionFilter *sf;
 	};
 	
-	FilterPids* FH;
+	FilterPids FH[MAXDEVICEFILTER];
 	int maxFilter;
 	bool ClosePipe(int Pid, int tid);
 	void sendTable();

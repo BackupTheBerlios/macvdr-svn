@@ -192,7 +192,7 @@ bool cMMInputDevice::IsTunedTo(const cChannel *Channel) const {
 
 bool cMMInputDevice::SetPid(cPidHandle *Handle, int Type, bool On) {
 	
-	printf("MMInput device: SetPid, Pid=%d\n", Handle->pid);
+	printf("MMInput device: SetPid, Pid=%d type %d on %d", Handle->pid,Type,On);
 	// check if array, to store the pids for one channel exist allready
 	// if not create one witth default size
 	
@@ -289,6 +289,17 @@ void cMMInputDevice::CloseDvr(void) {
 	pMM->fill( false );
 }
 
+int GetPid(uint8_t *tspkt) {
+        return ((tspkt[1] & 0x1f) << 8) + tspkt[2];
+};
+
+static inline void Dump(uint8_t *data) {
+        int i=0;
+        while (i<20)
+                printf("%02x ",data[i++]);
+        printf("\n");
+};
+
 bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 	//	printf("cMMInputDevice::GetTSPacket: length=%d, count=%d\n",blobSize,TSPackets);
 	if(TSPacketCounter == TSPackets){	
@@ -306,21 +317,27 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 	};
 
 	Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
-
-	TSPacketCounter++;
+       // Dump(Data);
+	/*
+        TSPacketCounter++;
 	return true;
-
-	TSHeader & tsh = *(TSHeader*)Data;
-	if (tsh.syncByte != 0x47){
+*/
+/*	if (Data[0] != 0x47){
+                printf("sync byte wrong %02x \n",Data[0]);
 		Data = NULL;
+                TSPacketCounter++;
 		return true;
 	 }
-	int pid = tsh.pid;
+*/	int pid = GetPid(Data);
 
 //	TSPacketCounter++;
 //	return true;
 
-	FH->Process(Data);
+        //if (pid <=0x1F)
+                FH->Process(Data);
+        TSPacketCounter++;
+        return true;
+
 	Data = NULL;
 //	AllTSPkg++;
 	for(int i = 0; i < maxChPids; i++ ){
@@ -350,13 +367,13 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 
 #if VDRVERSNUM >= 10300
 int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
-//	printf("OpenFilter pid %x, Tid %x Mask %x\n",Pid, Tid, Mask);
-	if(FH == 0x0){
+	printf("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
+/*	if(FH == 0x0){
 	printf("Error! No Filter Handler exist!\n");
 	return -1;
-	}
+	}*/
 	return FH->CreateFilter(Pid, Tid);
-//	return -1;
+	return -1;
 }
 #endif
 

@@ -6,137 +6,204 @@
 #include "DPConnect/TSHandler.hpp"
 #include "DPConnect/Streaming.hpp"
 
+#define FILDEB(out...) printf(out)
+
+class cSectionFilter {
+        public:
+                uint8_t buffer[4096];
+                int pos;
+                int last_cc;
+
+                cSectionFilter();
+                ~cSectionFilter();
+                
+                bool Process(int fd, uint8_t *tspkt);
+
+                inline bool  PUSI( uint8_t *tspkt) 
+                { return tspkt[1] & 0x40; };
+
+                inline int PayloadLength( uint8_t *tspkt) 
+                { 
+                        if ( !(tspkt[3] & 0x10) )
+                                return 0;
+                        if ( tspkt[3] & 0x20 ) {
+                                if (tspkt[4] > 183) 
+                                        return 0;
+                                else 
+                                        return 184 - 1 - tspkt[4];
+                        };
+                        return 184;
+                }
+};
+
+cSectionFilter::cSectionFilter() 
+        : pos(0), last_cc(0xFF) {
+};
+
+cSectionFilter::~cSectionFilter() {
+};
+
+static inline void Dump(uint8_t *data) {
+        int i=0;
+        while (i<20)
+                printf("%02x ",data[i++]);
+        printf("\n");
+};
+
+bool cSectionFilter::Process(int fd, uint8_t *tspkt) {
+        int len=PayloadLength(tspkt);
+        int cc= tspkt[3] & 0x0f;
+
+        if (!len)
+                return true;
+
+        int p_start=188-len;
+
+        bool cc_ok=((last_cc + 1) & 0x0f) == cc;
+        //printf("got packet cc: %d cc_ok: %d  len %d \n",cc, cc_ok, len);
+        //Dump(tspkt);
+        last_cc=cc;
+
+        if ( ((tspkt[3] & 0x20) && (tspkt[4]>0) && (tspkt[5] & 0x80)) 
+             // adaption field and discontinuity indicator present
+             || !cc_ok) { // or discontinuity detected
+                pos=0;
+                printf("discontinuity..\n");
+        }
+
+        if (PUSI(tspkt) ) {
+                uint8_t *remainder_start=&tspkt[p_start+1];
+                int remainder_len=tspkt[p_start];
+
+                uint8_t *new_start=&remainder_start[remainder_len];
+                int new_len= len-1-remainder_len;
+                //printf("found start of packet remainder_len %d new_len %d \n", 
+                //        remainder_len, new_len);
+                if (!pos) {
+                        //no packet to finish
+                        memcpy(&buffer[pos],new_start,new_len);
+                        pos+=new_len;
+                } else {
+                        memcpy(&buffer[pos],remainder_start,remainder_len);
+                        pos+=remainder_len;
+
+                        int section_len = (((buffer[1] & 0x0F) << 8) | (buffer[2] & 0xFF)) + 3;
+                        //printf("pos %d section_len %d\n",pos,section_len);
+                        //Dump(buffer);
+                        if (pos >= section_len) {
+                                if (section_len != write(fd,buffer,section_len) ) {
+                                        // FIXME check errno
+                                        return false;
+                                }
+                                //fsync(fd);
+                                //usleep(5000);
+                        } else {
+                                printf("pos %d section_len %d\n",pos,section_len);
+                                Dump(buffer);
+                                printf("was mach ich hier?\n");
+
+                                int section_start=section_len;
+                                section_len = (((buffer[section_start+1] & 0x0F) << 8) | (buffer[section_start+2] & 0xFF)) + 3;
+                                printf("2:pos %d section_len %d\n",pos,section_len);
+                                Dump(&buffer[section_start-5]);
+                                pos=0;
+                        }                        
+                        pos=0;
+                        // start new section
+                        memcpy(&buffer[pos],new_start,new_len);
+                        pos+=new_len;
+                }
+        } else {
+                //printf("copy payload...\n");
+                memcpy(&buffer[pos],&tspkt[p_start],len);
+                pos+=len;
+        };
+        return true;
+};
+
+
+//--------------------------------cFilterHandle---------------------------------------------
+
+
 cFilterHandle::cFilterHandle(){
-	
-	FH = 0x0;
 	maxFilter = 0;
-	
+
+        memset(FH,0xFF,sizeof(FH));
 }
 
 cFilterHandle::~cFilterHandle(){
 	for(int i = 0; i < maxFilter; i++){
-		delete FH[i].tb ;
+		delete FH[i].sf ;
 	}
-	delete [] FH;
 }
 
 /*
 	assum that eaach filter will create o
 */
 int cFilterHandle::CreateFilter(int Pid, int Tid){
-	
-	if(FH == 0){
-		maxFilter = 1;
-		FH = new FilterPids[maxFilter];
-		
-		if(FH != 0){
-			FH[0].PidNum = -1;
-			FH[0].Whandle = -1;
-			FH[0].Rhandle = -1;
-			FH[0].Tid = -1;
-			FH[0].length = 0;
-			FH[0].tb = 0x0;
-		}
-		else{
-			printf("cFilterHandle::CreateFilter: Couldn't create Filter\n");
-			return -1;
-		}
-		
-//		printf("cFilterHandle::CreateFilter: Create first Filter\n");
-	}
-	else{
-//		printf("cFilterHandle::CreateFilter: Create Filter number %d\n",maxFilter);
-		FilterPids *FHTmp = 0x0;
-		FHTmp = new FilterPids[++maxFilter];
-		if(FHTmp == 0){
-			printf("Error. Couldn't resize array to store filters\n");
-			return -1;
-		}
-		else{
-			for(int i = 0; i < (maxFilter - 1); i++){
-				FHTmp[i].PidNum		= FH[i].PidNum;
-				FHTmp[i].Whandle	= FH[i].Whandle;
-				FHTmp[i].Rhandle	= FH[i].Rhandle;
-				FHTmp[i].Tid		= FH[i].Tid;
-				FHTmp[i].length		= FH[i].length;
-				FHTmp[i].tb			= FH[i].tb;
-			}
-			// delete old array
-			// beware there is an memory leak !!!!!!!!!!
-			delete [] FH;
-			// store new pointer 
-			FH = FHTmp;
-		}
-	}
-	
-//	printf("cFilterHandle::CreateFilter: Create Pipe for Filter.\n");
+        int pos=0;
+        FILDEB("CreateFilter pid 0x%02x tid 0x%02x \n",Pid,Tid);
+
+/*        if (Pid != 0x12) {
+                printf("stop 0x%x\n",Pid);
+                return -1;
+        };
+*/
+        while (pos < MAXDEVICEFILTER && FH[pos].PidNum!=-1 )//&& FH[pos].PidNum!=Pid)
+                pos++;
+
+        if (pos >= MAXDEVICEFILTER) {
+                fprintf(stderr," Too many open filters! \n");
+                for (int i=0; i<MAXDEVICEFILTER; i++)
+                        fprintf(stderr,"0x%02x ",FH[i].PidNum);
+                fprintf(stderr,"\n");
+                return -1; 	
+        };
+/*
+        if (FH[pos].PidNum==Pid) {
+                // this is a bit of a hack, we don't want to have multiple filters for the
+                // same pid, but here we don't know now if there was a channel change...
+                // So we always replace the old filter with a new one.
+                fprintf(stderr,"Pidfilter for pid 0x%02x already registered, replacing\n");
+		close(FH[pos].Whandle);  // close handle for writing
+		delete FH[pos].sf;
+                FH[pos].sf=NULL;
+        };
+*/
+	printf("cFilterHandle::CreateFilter: Create Pipe for Filter.\n");
 
 	int fd[2];
 	if(pipe(fd) == 0 ){
-		FH[maxFilter -1].PidNum = Pid;
-		FH[maxFilter -1].Whandle = fd[1]; // store handle for writing
-		FH[maxFilter -1].Rhandle = fd[0]; // store handle for reading
-		FH[maxFilter -1].Tid = Tid;
-		FH[maxFilter -1].length = 0;
-		FH[maxFilter -1].tb = new TableBuilder();
+		FH[pos].PidNum = Pid;
+		FH[pos].Whandle = fd[1]; // store handle for writing
+		FH[pos].Rhandle = fd[0]; // store handle for reading
+		FH[pos].Tid = Tid;
+		FH[pos].length = 0;
+		FH[pos].sf = new cSectionFilter();
 		
-//	printf("existing filter:\n");
-//	for(int i = 0; i < maxFilter; i++){
-//		printf("\tIndex: %d, Pid: 0x%x, Tid 0x%x, \n",i,FH[i].PidNum, FH[i].Tid);
-//	}
-		return FH[maxFilter -1].Rhandle; // give back handle for reading
+		return FH[pos].Rhandle; // give back handle for reading
 	}
 	return -1;
 }
 
 int cFilterHandle::Process(uchar* data){
-int accept = 0;
-static int countEIT = 0;
-		TSHeader & tsh = *(TSHeader*)data;
-		if (tsh.scrambling != 0) return -1;
-		if (tsh.transportErr ) return -1;
+        int pid =  ((data[1] & 0x1f) << 8) + data[2];
+        //FILDEB("Process %p pid 0x%02x\n",data,pid);	
 
-	uint8_t * payload = data + 4;
-	
-	uint32_t pid = tsh.pid;
-	uint8_t tid = payload[1];	
-
-	TableSection * table;
-	for(int i = 0; i < maxFilter; i++){
-//		if(pid == 0x12 && i == 0) printf ("start filter search\n");
-//			if(pid == 0x12 && tsh.payloadStart ) printf("check filter: pid 0x%x, 0x%x compare with pid 0x%x and tid 0x%x index %d: \n"
-//				,pid,tid,FH[i].PidNum, FH[i].Tid,i);
-		if(FH[i].PidNum == pid && FH[i].Tid == tid){	
-			if(pid == 0x12 && tid == 0x4e){
-				if(tsh.payloadStart) countEIT = 0;
-				event_information & eit = *(event_information*)payload;
-				printf("section length %d\n",eit.section_length);
-				printf("last section number %d\n",eit.segment_last_section_number);
-				printf("section number %d\n",eit.section_number);
-				countEIT+= eit.section_length;
-			}
-			FH[i].tb->accumulate(tsh, payload);
-			
-			if((table = FH[i].tb->next()) == NULL){
-				uint8_t* buf =  FH[i].tb->getTable();
-				uint16_t len = (((buf[1] & 0x0F) << 8) | (buf[2] & 0xFF)) + 3;
-				if(tid == 0x4e) printf("Table (pid 0x%x, tid 0x%x, length %d) complete\n",FH[i].PidNum, FH[i].Tid, len);
-				if(tid == 0x4e) printf("Table count length %d\n",countEIT);
-//				if(write(FH[i].Whandle, FH[i].tb->getTable(), FH[i].tb->length()) == EPIPE){
-				if(write(FH[i].Whandle, FH[i].tb->getTable(), len) == EPIPE){
-					printf("Error pipe does not exist\n");
-				}
-				FH[i].tb->clear();
-//				printf("Table (pid 0x%x, length %d) cleared\n",FH[i].PidNum, FH[i].tb->length());
-			}
-//			else{
-//				if(pid == 0x12 && tid == 0x4e){
-//				event_information & eit = *(event_information*)table;
-//				printf("section length %d\n",eit.section_length);
-//				}
-//			}
-			break;
-		}
-	}
-	return accept;
+        for(int i = 0; i < MAXDEVICEFILTER; i++){
+                //printf("Pidnum[%d] 0x%02x\n",i,FH[i].PidNum);
+                if (FH[i].PidNum == pid){ 	
+                        if ( !FH[i].sf->Process(FH[i].Whandle,data) ) {
+                                // close pipe
+                                FILDEB("Close Filter pid 0x%02x, tid 0x%02x \n",
+                                        FH[i].PidNum,FH[i].Tid);
+                                FH[i].PidNum=-1;
+                                delete FH[i].sf;
+                                FH[i].sf=NULL;
+                                close(FH[i].Whandle);
+                        };
+                        return 1;
+                }
+        }
+        return 0;
 }

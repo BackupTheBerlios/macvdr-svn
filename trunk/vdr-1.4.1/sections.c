@@ -162,6 +162,19 @@ void cSectionHandler::SetStatus(bool On)
   Unlock();
 }
 
+int cSectionHandler::section_read(int fd, uint8_t *buf, int max_len) {
+    int len=safe_read(fd,buf,3);
+    if (len!=3)
+        return 0;
+
+    int sec_len = (((buf[1] & 0x0F) << 8) | (buf[2] & 0xFF)) + 3;
+    if (sec_len>max_len-3)
+        sec_len=max_len-3;
+
+    len+=safe_read(fd,&buf[3],sec_len-3);
+    return len;
+}
+
 void cSectionHandler::Action(void)
 {
   SetPriority(19);
@@ -198,7 +211,7 @@ void cSectionHandler::Action(void)
                   if (fh) {
                      // Read section data:
                      unsigned char buf[4096]; // max. allowed size for any EIT section
-                     int r = safe_read(fh->handle, buf, sizeof(buf));
+                     int r = section_read(fh->handle, buf, sizeof(buf));
                      if (!DeviceHasLock)
                         continue; // we do the read anyway, to flush any data that might have come from a different transponder
                      if (r > 3) { // minimum number of bytes necessary to get section length
@@ -212,10 +225,11 @@ void cSectionHandler::Action(void)
                                   fi->Process(pid, tid, buf, len);
                                }
                            }
-                        else if (time(NULL) - lastIncompleteSection > 10) { // log them only every 10 seconds
+                        else /*if (time(NULL) - lastIncompleteSection > 10) { // log them only every 10 seconds
                            dsyslog("read incomplete section - len = %d, r = %d", len, r);
                            lastIncompleteSection = time(NULL);
-                           }
+                           }*/
+                           printf("read incomplete section - len = %d, r = %d\n", len, r);
                         }
                      }
                   }

@@ -33,6 +33,7 @@ private:
   void Add(const cFilterData *FilterData);
   void Del(const cFilterData *FilterData);
   virtual void Action(void);
+  int section_read(int fd, uint8_t *buf, int max_len);
 public:
   cSectionHandler(cDevice *Device);
   virtual ~cSectionHandler();

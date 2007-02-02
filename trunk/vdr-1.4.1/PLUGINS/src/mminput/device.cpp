@@ -28,7 +28,7 @@ cMMInputDevice *cMMInputDevice::m_Device = NULL;
 
 cMMInputDevice::cMMInputDevice(void) {
 	m_Channel    = NULL;
-	AllTSPacket = 0;
+//	AllTSPacket = 0;
 
 	s_mmindex = 0;	
 	TSPacketCounter = 0;
@@ -302,11 +302,11 @@ static inline void Dump(uint8_t *data) {
 };
 
 bool cMMInputDevice::GetTSPacket(uchar *&Data) {
-	if(AllTSPacket%100000 == 0){
+/*	if(AllTSPacket%100000 == 0){
 			printf("cMMInputDevice::GetTSPacket: length=%d, count=%d\n",blobSize,TSPackets);
 	}
 	AllTSPacket++;
-	
+*/	
 	if(TSPacketCounter == TSPackets){	
 		//		TSPackets=0;
 		TSPackets = pMM->retrieve( m_blobDate, blobSize );

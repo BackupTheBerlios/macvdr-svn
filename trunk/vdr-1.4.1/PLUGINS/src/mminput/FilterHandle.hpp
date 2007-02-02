@@ -17,7 +17,6 @@ class cFilterHandle {
 private:
 
 	struct FilterPids{
-		int PidNum;
 		int Rhandle;
 		int Whandle;
 		int length;
@@ -25,6 +24,7 @@ private:
 		cSectionFilter *sf;
 	};
 	
+        int8_t PidNum[MAXDEVICEFILTER];
 	FilterPids FH[MAXDEVICEFILTER];
 	int maxFilter;
 	bool ClosePipe(int Pid, int tid);

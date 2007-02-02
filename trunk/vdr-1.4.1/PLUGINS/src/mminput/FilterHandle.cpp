@@ -6,7 +6,11 @@
 #include "DPConnect/TSHandler.hpp"
 #include "DPConnect/Streaming.hpp"
 
-#define FILDEB(out...) printf(out)
+//#define FILDEB(out...) printf(out)
+
+#ifndef FILDEB
+#define FILDEB(out...)
+#endif
 
 class cSectionFilter {
         public:
@@ -68,7 +72,7 @@ bool cSectionFilter::Process(int fd, uint8_t *tspkt) {
              // adaption field and discontinuity indicator present
              || !cc_ok) { // or discontinuity detected
                 pos=0;
-                printf("discontinuity..\n");
+                FILDEB("discontinuity..\n");
         }
 
         if (PUSI(tspkt) ) {
@@ -129,6 +133,7 @@ cFilterHandle::cFilterHandle(){
 	maxFilter = 0;
 
         memset(FH,0xFF,sizeof(FH));
+        memset(PidNum,0xFF,sizeof(PidNum));
 }
 
 cFilterHandle::~cFilterHandle(){
@@ -149,32 +154,37 @@ int cFilterHandle::CreateFilter(int Pid, int Tid){
                 return -1;
         };
 */
-        while (pos < MAXDEVICEFILTER && FH[pos].PidNum!=-1 )//&& FH[pos].PidNum!=Pid)
+        
+        // check for closed pipes
+        for (pos=0; pos < MAXDEVICEFILTER ; pos++)
+                if ( PidNum[pos] != -1) {
+                        if ( 0 != write(FH[pos].Whandle,NULL,0) ) {
+                                // close pipe
+                                FILDEB("Pipe not open. Close Filter pid 0x%02x, tid 0x%02x \n",
+                                        PidNum[pos],FH[pos].Tid);
+                                PidNum[pos]=-1;
+                                delete FH[pos].sf;
+                                FH[pos].sf=NULL;
+                                close(FH[pos].Whandle);
+                        }
+                }
+
+        pos=0;
+        while (pos < MAXDEVICEFILTER && PidNum[pos]!=-1 )
                 pos++;
 
         if (pos >= MAXDEVICEFILTER) {
                 fprintf(stderr," Too many open filters! \n");
                 for (int i=0; i<MAXDEVICEFILTER; i++)
-                        fprintf(stderr,"0x%02x ",FH[i].PidNum);
+                        fprintf(stderr,"0x%02x ",PidNum[pos]);
                 fprintf(stderr,"\n");
                 return -1; 	
         };
-/*
-        if (FH[pos].PidNum==Pid) {
-                // this is a bit of a hack, we don't want to have multiple filters for the
-                // same pid, but here we don't know now if there was a channel change...
-                // So we always replace the old filter with a new one.
-                fprintf(stderr,"Pidfilter for pid 0x%02x already registered, replacing\n");
-		close(FH[pos].Whandle);  // close handle for writing
-		delete FH[pos].sf;
-                FH[pos].sf=NULL;
-        };
-*/
-	printf("cFilterHandle::CreateFilter: Create Pipe for Filter.\n");
+	FILDEB("cFilterHandle::CreateFilter: Create Pipe for Filter.\n");
 
 	int fd[2];
 	if(pipe(fd) == 0 ){
-		FH[pos].PidNum = Pid;
+		PidNum[pos] = Pid;
 		FH[pos].Whandle = fd[1]; // store handle for writing
 		FH[pos].Rhandle = fd[0]; // store handle for reading
 		FH[pos].Tid = Tid;
@@ -191,13 +201,13 @@ int cFilterHandle::Process(uchar* data){
         //FILDEB("Process %p pid 0x%02x\n",data,pid);	
 
         for(int i = 0; i < MAXDEVICEFILTER; i++){
-                //printf("Pidnum[%d] 0x%02x\n",i,FH[i].PidNum);
-                if (FH[i].PidNum == pid){ 	
+                //printf("Pidnum[%d] 0x%02x\n",i,PidNum[pos]);
+                if (PidNum[i] == pid){ 	
                         if ( !FH[i].sf->Process(FH[i].Whandle,data) ) {
                                 // close pipe
                                 FILDEB("Close Filter pid 0x%02x, tid 0x%02x \n",
-                                        FH[i].PidNum,FH[i].Tid);
-                                FH[i].PidNum=-1;
+                                        PidNum[i],FH[i].Tid);
+                                PidNum[i]=-1;
                                 delete FH[i].sf;
                                 FH[i].sf=NULL;
                                 close(FH[i].Whandle);

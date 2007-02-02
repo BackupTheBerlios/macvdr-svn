@@ -28,6 +28,7 @@ cMMInputDevice *cMMInputDevice::m_Device = NULL;
 
 cMMInputDevice::cMMInputDevice(void) {
 	m_Channel    = NULL;
+	AllTSPacket = 0;
 
 	s_mmindex = 0;	
 	TSPacketCounter = 0;
@@ -88,40 +89,36 @@ return true;
 
 bool cMMInputDevice::ProvidesTransponder(const cChannel *Channel) const
 {
+//	printf("cMMInputDevice::ProvidesTransponder\n");
 	return true;
 }
 
 bool cMMInputDevice::ProvidesChannel(const cChannel *Channel, int Priority, bool *NeedsDetachReceivers) const {
 	
-	printf("cMMInputDevice::ProvidesChannel(start): Device support the modulation 0x%x priority %d\n",pMM->tuningSpace(), Priority);
+//	printf("cMMInputDevice::ProvidesChannel: start give priority%d, we have priority %d\n",Priority,this->Priority());
 	bool result = false;
 	bool hasPriority = Priority < 0 || Priority > this->Priority();
 	bool needsDetachReceivers = false;
-	
-	if(ProvidesSource(Channel->Source())) {
+	if(ProvidesSource(Channel->Source())){
 		result = hasPriority;
-//	printf("cMMInputDevice::ProvidesChannel: Device support the modulation 0x%x return value %d priority %d\n",pMM->tuningSpace(), result, Priority);
+
 		if(Priority >= 0 && Receiving(true)) {
-			if(IsTunedTo(Channel)) {
-				if(Channel->Vpid() && !HasPid(Channel->Vpid()) || Channel->Apid(0) && !HasPid(Channel->Apid(0))) {
-/*
-					if(Ca() >= CA_ENCRYPTED_MIN || Channel->Ca() >= CA_ENCRYPTED_MIN){
-						needsDetachReceivers = Ca() != Channel->Ca();
-					}
-					else 
-*/
-					if(!IsPrimaryDevice()){
-					 result = true;
-					 }
-					else result = Priority >= Setup.PrimaryLimit;
-				}
-				else result = !IsPrimaryDevice() || Priority >= Setup.PrimaryLimit;
-			}
-			else needsDetachReceivers = true;
+			needsDetachReceivers = false;
+			if(IsTunedTo(Channel)){
+					result = true;	
+			 }
 		}
+		else{
+           needsDetachReceivers = true;
+        }
 	}
-	if (NeedsDetachReceivers) *NeedsDetachReceivers = needsDetachReceivers;
-	printf("cMMInputDevice::ProvidesChannel(stop): Device support the modulation 0x%x return value %d priority %d\n",pMM->tuningSpace(), result, Priority);
+	else{ 
+		result = false;
+	}
+	
+	if(NeedsDetachReceivers) *NeedsDetachReceivers = needsDetachReceivers;
+
+//	printf("cMMInputDevice::ProvidesChannel: return value: %d, needsDetachReceivers %d\n",result,needsDetachReceivers);
 	return result;
 }
 
@@ -130,6 +127,7 @@ bool cMMInputDevice::ProvidesChannel(const cChannel *Channel, int Priority, bool
 */
 bool cMMInputDevice::SetChannelDevice(const cChannel *Channel, 
 									  bool LiveView) {
+	printf("cMMInputDevice::SetChannelDevice\n");
 	
 /*
   bool TurnOffLivePIDs = HasDecoder()
@@ -149,19 +147,23 @@ bool cMMInputDevice::SetChannelDevice(const cChannel *Channel,
   // Set the tuner:
 	tunerStatus = tsSet;
 	if (myTune( pMM, Channel) == true) tunerStatus = tsTuned;
-	else tunerStatus = tsIdle;
+	else{
+		tunerStatus = tsIdle;
+			return false;
+		}
 
 	if(tunerStatus == tsTuned){
 
 	// check if array to store the pids exists
+/*
 	if(chPids != 0x0){
 		delete chPids;
 		chPids = 0x0;
 		maxChPids = defChPids;
 	}
-	
-//	printf("SetChannelDevice Channel: %s, LiveView: %s\n", m_Channel->Name(),
-//		   LiveView ? "true" : "false");
+*/	
+	printf("SetChannelDevice Channel: %s, LiveView: %s\n", m_Channel->Name(),
+		   LiveView ? "true" : "false");
 	}
 
 	// If this channel switch was requested by the EITScanner we don't wait for
@@ -175,27 +177,26 @@ bool cMMInputDevice::SetChannelDevice(const cChannel *Channel,
 	return true;
 }
 
-// not cards with an own vido or audi decoder are supported decoder
-bool cMMInputDevice::HasDecoder(void) const {
+bool cMMInputDevice::HasDecoder(void) const
+{
   return false;
-//   return fd_video >= 0 && fd_audio >= 0;
 }
 
-// This driver don't support any Channels thats provides conditional access 
 int cMMInputDevice::ProvidesCa(const cChannel *Channel) const{
 	return 0;
 }
 
 bool cMMInputDevice::IsTunedTo(const cChannel *Channel) const {
+	printf("cMMInputDevice::IsTunedTo check\n");
   return tunerStatus != tsIdle && m_Channel->Source() == Channel->Source() && m_Channel->Transponder() == Channel->Transponder();
 }
 
 bool cMMInputDevice::SetPid(cPidHandle *Handle, int Type, bool On) {
 	
-	printf("MMInput device: SetPid, Pid=%d type %d on %d", Handle->pid,Type,On);
+	printf("MMInput device: SetPid, Pid=%d type %d on %d\n", Handle->pid,Type,On);
 	// check if array, to store the pids for one channel exist allready
 	// if not create one witth default size
-	
+	return true;
 	if(chPids == 0){
 		chPids = new int[maxChPids];
 		for(int i = 0; i < maxChPids; i++){
@@ -301,7 +302,11 @@ static inline void Dump(uint8_t *data) {
 };
 
 bool cMMInputDevice::GetTSPacket(uchar *&Data) {
-	//	printf("cMMInputDevice::GetTSPacket: length=%d, count=%d\n",blobSize,TSPackets);
+	if(AllTSPacket%100000 == 0){
+			printf("cMMInputDevice::GetTSPacket: length=%d, count=%d\n",blobSize,TSPackets);
+	}
+	AllTSPacket++;
+	
 	if(TSPacketCounter == TSPackets){	
 		//		TSPackets=0;
 		TSPackets = pMM->retrieve( m_blobDate, blobSize );
@@ -328,18 +333,28 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
                 TSPacketCounter++;
 		return true;
 	 }
-*/	int pid = GetPid(Data);
+*/	
+	int pid = GetPid(Data);
+/*
+	static int pidcounter = -1;
+	if(pidcounter%33333 == 0){
+		printf("GetTSPacket: has Video pid %d\n",pid);
+	}
+*/
+	if(HasPid(pid)){
+//		pidcounter++;
+        TSPacketCounter++;
+        return true;
+	}
 
 //	TSPacketCounter++;
 //	return true;
 
-        //if (pid <=0x1F)
-                FH->Process(Data);
-        TSPacketCounter++;
-        return true;
+	FH->Process(Data);
 
 	Data = NULL;
 //	AllTSPkg++;
+/*
 	for(int i = 0; i < maxChPids; i++ ){
 		if(chPids[i] == pid){
 			Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
@@ -347,6 +362,7 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 			break;
 		}
 	}
+*/
 	/*
 	if(Data == NULL){
 		if((errCounter %2001) == 0){
@@ -361,19 +377,17 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 	}
 	*/
 	TSPacketCounter++;
-
 	return true;
 }
 
 #if VDRVERSNUM >= 10300
 int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
 	printf("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
-/*	if(FH == 0x0){
+	if(FH == 0x0){
 	printf("Error! No Filter Handler exist!\n");
 	return -1;
-	}*/
+	}
 	return FH->CreateFilter(Pid, Tid);
-	return -1;
 }
 #endif
 
@@ -427,7 +441,7 @@ void cMMInputDevice::giveTuner( MMInputDevice * pMM )
 }
 
 bool cMMInputDevice::myTune( MMInputDevice * pMM, const cChannel *Channel){
-	
+//	printf("cMMInputDevice::myTune\n");
 	if(tunerStatus == tsSet){
 		tunerStatus = tsTuned;
 		if(m_Channel->Bandwidth() != Channel->Bandwidth())			tunerStatus = tsSet;

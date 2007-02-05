@@ -11,10 +11,10 @@
 #ifndef FILDEB
 #define FILDEB(out...)
 #endif
-
+#define MaxEPGSectionLength 4096
 class cSectionFilter {
         public:
-                uint8_t buffer[4096];
+                uint8_t buffer[MaxEPGSectionLength];
                 int pos;
                 int last_cc;
 
@@ -24,13 +24,13 @@ class cSectionFilter {
                 bool Process(int fd, uint8_t *tspkt);
 
                 inline bool  PUSI( uint8_t *tspkt) 
-                { return tspkt[1] & 0x40; };
-
+                { return tspkt[1] & 0x40; }; 
+				
                 inline int PayloadLength( uint8_t *tspkt) 
                 { 
-                        if ( !(tspkt[3] & 0x10) )
+                        if ( !(tspkt[3] & 0x10) ) // check if we have an adaption filed (optional)
                                 return 0;
-                        if ( tspkt[3] & 0x20 ) {
+                        if ( tspkt[3] & 0x20 ) { 
                                 if (tspkt[4] > 183) 
                                         return 0;
                                 else 
@@ -38,10 +38,12 @@ class cSectionFilter {
                         };
                         return 184;
                 }
+		private:
+			bool WaitForNewSection;
 };
 
 cSectionFilter::cSectionFilter() 
-        : pos(0), last_cc(0xFF) {
+        : pos(0), last_cc(0xFF), WaitForNewSection(false) {
 };
 
 cSectionFilter::~cSectionFilter() {
@@ -55,8 +57,15 @@ static inline void Dump(uint8_t *data) {
 };
 
 bool cSectionFilter::Process(int fd, uint8_t *tspkt) {
+		TSHeader & tsh = *(TSHeader*)tspkt;
+
+		if( tsh.payloadStart == 0 && WaitForNewSection == true){
+//			printf("cSectionFilter::Process: wait for new section\n");
+			return true;
+		}
+		
         int len=PayloadLength(tspkt);
-        int cc= tspkt[3] & 0x0f;
+		int cc = tsh.continuity;
 
         if (!len)
                 return true;
@@ -64,7 +73,7 @@ bool cSectionFilter::Process(int fd, uint8_t *tspkt) {
         int p_start=188-len;
 
         bool cc_ok=((last_cc + 1) & 0x0f) == cc;
-        //printf("got packet cc: %d cc_ok: %d  len %d \n",cc, cc_ok, len);
+//		printf("got packet cc: %d cc_ok: %d  len %d \n",cc, cc_ok, len);
         //Dump(tspkt);
         last_cc=cc;
 
@@ -72,55 +81,85 @@ bool cSectionFilter::Process(int fd, uint8_t *tspkt) {
              // adaption field and discontinuity indicator present
              || !cc_ok) { // or discontinuity detected
                 pos=0;
+				if(WaitForNewSection == false){
                 FILDEB("discontinuity..\n");
+				}
+				WaitForNewSection = true;
+				pos = 0;
+				return true;
         }
 
         if (PUSI(tspkt) ) {
+			FILDEB("cSectionFilter::Process: start new section..\n");		
+			WaitForNewSection = false;
                 uint8_t *remainder_start=&tspkt[p_start+1];
                 int remainder_len=tspkt[p_start];
 
                 uint8_t *new_start=&remainder_start[remainder_len];
                 int new_len= len-1-remainder_len;
-                //printf("found start of packet remainder_len %d new_len %d \n", 
-                //        remainder_len, new_len);
+//				sectionNumRead = tspkt[p_start+2];
+//				printf("found start of packet remainder_len %d new_len %d\n", 
+//							remainder_len, new_len);
                 if (!pos) {
                         //no packet to finish
+						if(pos + new_len >= MaxEPGSectionLength){
+							printf("estimated section too long (pos == %d)!! %d\n",pos, pos + new_len);
+							return false;
+						}
+//						printf("cSectionFilter::Process:section number: %d \n",sectionNumRead);
                         memcpy(&buffer[pos],new_start,new_len);
                         pos+=new_len;
                 } else {
-                        memcpy(&buffer[pos],remainder_start,remainder_len);
+//						printf("cSectionFilter::Process:section number: %d \n",sectionNumRead);
+						memcpy(&buffer[pos],remainder_start,remainder_len);
                         pos+=remainder_len;
 
                         int section_len = (((buffer[1] & 0x0F) << 8) | (buffer[2] & 0xFF)) + 3;
-                        //printf("pos %d section_len %d\n",pos,section_len);
                         //Dump(buffer);
                         if (pos >= section_len) {
+							
                                 if (section_len != write(fd,buffer,section_len) ) {
                                         // FIXME check errno
                                         return false;
                                 }
+								
                                 //fsync(fd);
                                 //usleep(5000);
                         } else {
-                                printf("pos %d section_len %d\n",pos,section_len);
-                                Dump(buffer);
-                                printf("was mach ich hier?\n");
+//                                printf("pos %d section_len %d\n",pos,section_len);
+//                                Dump(buffer);
+//                                printf("cSectionFilter::Process:was mach ich hier?\n");
 
                                 int section_start=section_len;
                                 section_len = (((buffer[section_start+1] & 0x0F) << 8) | (buffer[section_start+2] & 0xFF)) + 3;
-                                printf("2:pos %d section_len %d\n",pos,section_len);
+//                                printf("2:pos %d section_len %d\n",pos,section_len);
                                 Dump(&buffer[section_start-5]);
                                 pos=0;
                         }                        
                         pos=0;
                         // start new section
+						if(pos + new_len >= MaxEPGSectionLength){
+							printf("cSectionFilter::Process:estimated section too long (pos =%d)!! %d\n",pos, pos + new_len);
+							return true;
+						}
                         memcpy(&buffer[pos],new_start,new_len);
                         pos+=new_len;
                 }
         } else {
+			if(WaitForNewSection == false){ 
                 //printf("copy payload...\n");
+				if( (pos + len >= MaxEPGSectionLength)){
+
+					int tmpLen = MaxEPGSectionLength - pos - 1;
+					if(tspkt[p_start + tmpLen] != 0xFF){
+						printf("cSectionFilter::Process:estimated section too long (pos = %d)!! %d\n",pos, pos + len);
+						return true;
+					}
+					len = tmpLen;
+				}
                 memcpy(&buffer[pos],&tspkt[p_start],len);
                 pos+=len;
+			}
         };
         return true;
 };

@@ -127,7 +127,7 @@ bool cMMInputDevice::ProvidesChannel(const cChannel *Channel, int Priority, bool
 */
 bool cMMInputDevice::SetChannelDevice(const cChannel *Channel, 
 									  bool LiveView) {
-	printf("cMMInputDevice::SetChannelDevice\n");
+//	printf("cMMInputDevice::SetChannelDevice\n");
 	
 /*
   bool TurnOffLivePIDs = HasDecoder()
@@ -162,8 +162,8 @@ bool cMMInputDevice::SetChannelDevice(const cChannel *Channel,
 		maxChPids = defChPids;
 	}
 */	
-	printf("SetChannelDevice Channel: %s, LiveView: %s\n", m_Channel->Name(),
-		   LiveView ? "true" : "false");
+//	printf("SetChannelDevice Channel: %s, LiveView: %s\n", m_Channel->Name(),
+//		   LiveView ? "true" : "false");
 	}
 
 	// If this channel switch was requested by the EITScanner we don't wait for
@@ -187,13 +187,13 @@ int cMMInputDevice::ProvidesCa(const cChannel *Channel) const{
 }
 
 bool cMMInputDevice::IsTunedTo(const cChannel *Channel) const {
-	printf("cMMInputDevice::IsTunedTo check\n");
+//	printf("cMMInputDevice::IsTunedTo check\n");
   return tunerStatus != tsIdle && m_Channel->Source() == Channel->Source() && m_Channel->Transponder() == Channel->Transponder();
 }
 
 bool cMMInputDevice::SetPid(cPidHandle *Handle, int Type, bool On) {
 	
-	printf("MMInput device: SetPid, Pid=%d type %d on %d\n", Handle->pid,Type,On);
+//	printf("MMInput device: SetPid, Pid=%d type %d on %d\n", Handle->pid,Type,On);
 	// check if array, to store the pids for one channel exist allready
 	// if not create one witth default size
 	return true;
@@ -273,7 +273,7 @@ bool cMMInputDevice::SetPid(cPidHandle *Handle, int Type, bool On) {
 }
 
 bool cMMInputDevice::OpenDvr(void) {
-	printf("OpenDvr\n");
+//	printf("OpenDvr\n");
 	CloseDvr();
 	if (!pMM->fill( true )){
 		printf("Error: Could not start streaming...\n");
@@ -286,7 +286,7 @@ bool cMMInputDevice::OpenDvr(void) {
 }
 
 void cMMInputDevice::CloseDvr(void) {
-	printf("CloseDvr\n");
+//	printf("CloseDvr\n");
 	pMM->fill( false );
 }
 
@@ -308,74 +308,37 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 	AllTSPacket++;
 */	
 	if(TSPacketCounter == TSPackets){	
-		//		TSPackets=0;
 		TSPackets = pMM->retrieve( m_blobDate, blobSize );
-//				printf("cMMInputDevice::GetTSPacket: length=%d, count=%d\n",blobSize,TSPackets);
-//				TSPackets=0;
 		TSPacketCounter = 0;
 		if(TSPackets == 0) usleep(83000);
 	}
 	if(TSPackets == 0){
 		Data = NULL;
-//		printf("pid filter rejection: %f\n", (100.0*(AllTSPkg-SelTSPkg)/AllTSPkg));
 		return true;
 	};
 
 	Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
        // Dump(Data);
-	/*
-        TSPacketCounter++;
-	return true;
-*/
-/*	if (Data[0] != 0x47){
-                printf("sync byte wrong %02x \n",Data[0]);
+
+// do we have a valid ts packet?
+	if(Data[0] != 0x47){
+//		printf("cMMInputDevice::GetTSPacket: sync byte wrong %x \n",Data[0]);
 		Data = NULL;
-                TSPacketCounter++;
+		TSPacketCounter++;
 		return true;
 	 }
-*/	
+	 
 	int pid = GetPid(Data);
-/*
-	static int pidcounter = -1;
-	if(pidcounter%33333 == 0){
-		printf("GetTSPacket: has Video pid %d\n",pid);
-	}
-*/
+
 	if(HasPid(pid)){
-//		pidcounter++;
         TSPacketCounter++;
         return true;
 	}
 
-//	TSPacketCounter++;
-//	return true;
-
 	FH->Process(Data);
 
 	Data = NULL;
-//	AllTSPkg++;
-/*
-	for(int i = 0; i < maxChPids; i++ ){
-		if(chPids[i] == pid){
-			Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
-//			SelTSPkg++;
-			break;
-		}
-	}
-*/
-	/*
-	if(Data == NULL){
-		if((errCounter %2001) == 0){
-			printf("device no valid TS packet\n");
-			printf("\tpids: ");
-			for(int i = 0; i < maxChPids; i++ ){
-				printf(" %d",chPids[i]);
-			}	
-			printf(" \n");
-		}
-		errCounter++;
-	}
-	*/
+
 	TSPacketCounter++;
 	return true;
 }
@@ -467,9 +430,9 @@ bool cMMInputDevice::myTune( MMInputDevice * pMM, const cChannel *Channel){
 			[pDict setObject:[NSNumber numberWithUnsignedLong:Channel->Guard()] forKey:@"GuardInterval"];	
 			[pDict setObject:[NSNumber numberWithUnsignedLong:Channel->Frequency()*1000] forKey:@"FrequencyHz"];
 			
-			NSDictionary * pConstDict = pDict;
+//			NSDictionary * pConstDict = pDict;
 			
-			printf( "tuning dictionary: %s\n", [[pConstDict description] lossyCString] );
+//			printf( "tuning dictionary: %s\n", [[pConstDict description] lossyCString] );
 			
 			// tune to those parameters
 			//	fprintf( stderr, "Tuning to: %s\n", [[pDict description] cString] );
@@ -483,7 +446,7 @@ bool cMMInputDevice::myTune( MMInputDevice * pMM, const cChannel *Channel){
 			/*
 			assume that we have managed on the moment only terrastical device
 			*/
-			printf("store channel values\n");
+//			printf("store channel values\n");
 			  if( m_Channel->SetTerrTransponderData(
 				Channel->Source(), 
 				Channel->Frequency(), 

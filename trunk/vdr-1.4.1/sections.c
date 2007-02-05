@@ -167,11 +167,15 @@ int cSectionHandler::section_read(int fd, uint8_t *buf, int max_len) {
     if (len!=3)
         return 0;
 
-    int sec_len = (((buf[1] & 0x0F) << 8) | (buf[2] & 0xFF)) + 3;
+    int sec_len = (((buf[1] & 0x0F) << 8) | (buf[2] & 0xFF)) +3;
     if (sec_len>max_len-3)
         sec_len=max_len-3;
 
-    len+=safe_read(fd,&buf[3],sec_len-3);
+    len+=safe_read(fd,&buf[len],sec_len-len);
+    while (len < sec_len) {
+        usleep(13000);
+        len+=safe_read(fd,&buf[len],sec_len-len);
+    };
     return len;
 }
 

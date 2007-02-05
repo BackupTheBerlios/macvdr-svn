@@ -341,14 +341,14 @@ bool cChannel::SetCableTransponderData(int Source, int Frequency, int Modulation
 
 bool cChannel::SetTerrTransponderData(int Source, int Frequency, int Bandwidth, int Modulation, int Hierarchy, int CoderateH, int CoderateL, int Guard, int Transmission)
 {
-  if (source != Source || frequency != Frequency || bandwidth != Bandwidth || modulation != Modulation || hierarchy != Hierarchy || coderateH != CoderateH || coderateL != CoderateL || guard != Guard || transmission != Transmission) {
+  if (source != Source || frequency != Frequency/1000 || bandwidth != Bandwidth || modulation != Modulation || hierarchy != Hierarchy || coderateH != CoderateH || coderateL != CoderateL || guard != Guard || transmission != Transmission) {
      if (Number()) {
         dsyslog("changing transponder data of channel %d from %s:%d:%d:%d:%d:%d:%d:%d:%d to %s:%d:%d:%d:%d:%d:%d:%d:%d", Number(), *cSource::ToString(source), frequency, bandwidth, modulation, hierarchy, coderateH, coderateL, guard, transmission, *cSource::ToString(Source), Frequency, Bandwidth, Modulation, Hierarchy, CoderateH, CoderateL, Guard, Transmission);
         modification |= CHANNELMOD_TRANSP;
         Channels.SetModified();
         }
      source = Source;
-     frequency = Frequency;
+     frequency = Frequency/1000; // do we read the NIT frequency parameter correct?
      bandwidth = Bandwidth;
      modulation = Modulation;
      hierarchy = Hierarchy;

@@ -1,7 +1,7 @@
 This is a "plugin" for the Video Disk Recorder (VDR).
 
+Initial versions by:         
 Written by:                  Stefan Rieke <appletalg@gmx.net>
-
 Project's homepage:          URL
 
 Latest version available at: URL
@@ -9,3 +9,25 @@ Latest version available at: URL
 See the file COPYING for license information.
 
 Description:
+
+This plugin is a device mapper for MMInput drivers
+It can be used as an input device for the vdr.
+
+Requirements:
+-------------
+
+- MMInput Version 0.8.4 or higher.
+	1.) An Image for the kernel extention is available at http://www.defyne.org/forums/
+	2.) Source file of the mminput package. For information, please have a look to http://www.defyne.org/dvb/driver.html
+		Attention!! You don't need to compile anything yourself of this code. 
+
+Installation:
+-------------
+	1.) Check, that within the Makefile, the string of the varibale UDDIR 
+		points to the correct directory.
+	2.) Now type make all
+
+Running:
+--------
+	1.) this plugin has n o extra options.
+	2.) Run vdr with an extra plugin call: -P'mminput'

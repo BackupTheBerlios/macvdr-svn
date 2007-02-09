@@ -1,5 +1,5 @@
 /*
- *  $Id: device.h,v 1.3 2005/02/08 15:21:19 lordjaxom Exp $
+ *  $Id: device.hpp,v 0.0.1 2007/02/08 Stefan Rieke
  */
  
 #ifndef VDR_MMINPUTDEV_DEVICE_H
@@ -7,7 +7,6 @@
 
 #include <vdr/device.h>
 
-//#include "Drivers/MMInputFamily/MMInputLib.hpp"
 #include "MMInputLib.hpp"
 
 #import <Foundation/NSDictionary.h>

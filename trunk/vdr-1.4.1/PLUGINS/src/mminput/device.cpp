@@ -1,13 +1,10 @@
 /*
- *  $Id: device.c,v 1.6 2005/04/24 16:21:59 lordjaxom Exp $
+ *  $Id: device.cpp,v 0.0.1 2007/02/08 Stefan Rieke
  */
  
 #include "device.hpp"
 #include "setup.hpp"
 #include "menu.hpp"
-
-#include "DPConnect/TSHandler.hpp"
-#include "DPConnect/Streaming.hpp"
 
 #include <vdr/channels.h>
 #include <vdr/ringbuffer.h>
@@ -382,7 +379,7 @@ MMInputDevice * cMMInputDevice::grabTuner( int mmindex )
 	fprintf( stderr, "It is a %s %s device.\n",
 		tspace < (int)(sizeof(spectra)/sizeof(*spectra)) ? spectra[tspace] : "Unknown",
 		datakind < (int)(sizeof(dkinds)) ? dkinds[datakind] : "Unsupported" );
-
+	
 	// activate it
 	fprintf( stderr, "Activating device...\n" );
 	if (pMM->activate() != 0)
@@ -430,9 +427,9 @@ bool cMMInputDevice::myTune( MMInputDevice * pMM, const cChannel *Channel){
 			[pDict setObject:[NSNumber numberWithUnsignedLong:Channel->Guard()] forKey:@"GuardInterval"];	
 			[pDict setObject:[NSNumber numberWithUnsignedLong:Channel->Frequency()*1000] forKey:@"FrequencyHz"];
 			
-//			NSDictionary * pConstDict = pDict;
+			NSDictionary * pConstDict = pDict;
 			
-//			printf( "tuning dictionary: %s\n", [[pConstDict description] lossyCString] );
+			printf( "tuning dictionary: %s\n", [[pConstDict description] lossyCString] );
 			
 			// tune to those parameters
 			//	fprintf( stderr, "Tuning to: %s\n", [[pDict description] cString] );

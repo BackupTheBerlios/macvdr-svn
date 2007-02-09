@@ -1,19 +1,18 @@
 /*
- * streamdev.c: A plugin for the Video Disk Recorder
+ * mminput.cpp: A plugin for the Video Disk Recorder
  *
  * See the README file for copyright information and how to reach the author.
  *
- * $Id: streamdev-client.c,v 1.2 2005/04/24 16:19:44 lordjaxom Exp $
+ * $Id: mminput.cpp,v 0.0.1 2007/02/08 Stefan Rieke 
  */
 
 #include "mminput.hpp"
 #include "device.hpp"
 #include "setup.hpp"
 
-//#include "client/menu.h"
 #include "i18n.h"
 
-const char *cPluginMMInput::DESCRIPTION = "VTP MMInput";
+const char *cPluginMMInput::DESCRIPTION = "MMInput Driver";
 
 cPluginMMInput::cPluginMMInput(void) {
 }
@@ -27,7 +26,7 @@ const char *cPluginMMInput::Description(void) {
 
 bool cPluginMMInput::Start(void) {
 //	i18n_name = Name();
-	RegisterI18n(Phrases);
+  RegisterI18n(Phrases);
 
 	cMMInputDevice::Init();
 
@@ -35,23 +34,18 @@ bool cPluginMMInput::Start(void) {
 }
 
 void cPluginMMInput::Housekeeping(void) {
-//	if (MMInputSetup.StartClient && MMInputSetup.SyncEPG)
-//		ClientSocket.SynchronizeEPG();
 }
 
 const char *cPluginMMInput::MainMenuEntry(void) {
 	return NULL;
-	//return MMInputSetup.StartClient ? tr("Streaming Control") : NULL;
 }
 
 cOsdObject *cPluginMMInput::MainMenuAction(void) {
 	return NULL;
-	//return MMInputSetup.StartClient ? new cMMInputMenu : NULL;
 }
 
 cMenuSetupPage *cPluginMMInput::SetupMenu(void) {
   return new cMMInputMenuSetupPage;
-//	return NULL;
 }
 
 bool cPluginMMInput::SetupParse(const char *Name, const char *Value) {

@@ -8,7 +8,6 @@
 #define MAXDEVICEFILTER 32
 
 #include <vdr/tools.h>
-#include "TableBuilder.hpp"
 
 class cSectionFilter;
 

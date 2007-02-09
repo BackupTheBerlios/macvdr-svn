@@ -24,8 +24,8 @@ VDRDIR = ../../..
 LIBDIR = ../../lib
 TMPDIR = /tmp
 
-UDDIR = /Users/rieke/Projekte/MMInput_new/DVB/
-#UDDIR = /Users/martin/vdr/MacDVB/
+#UDDIR = /Users/rieke/Projekte/MMInput_new/DVB/
+UDDIR = /Users/rieke/Projekte/MMInput_0.8.5/DVB/
 frameworks= -framework Foundation -framework IOKit
 
 ### Allow user defined options to overwrite defaults:
@@ -44,14 +44,17 @@ PACKAGE = vdr-$(ARCHIVE)
 ### Includes and Defines (add further entries here):
 
 INCLUDES += -I$(VDRDIR)/include
-INCLUDES += -I$(UDDIR)
+INCLUDES += -I$(UDDIR) -I$(UDDIR)/Drivers/MMInputFamily
 DEFINES += -D_GNU_SOURCE -DPLUGIN_NAME_I18N='"$(PLUGIN)"'
 
 ### The object files (add further files here):
 
-OBJS = $(PLUGIN).o MMInputLib.o device.o setup.o FilterHandle.o TableBuilder.o
+OBJS = $(PLUGIN).o device.o setup.o FilterHandle.o
 
 ### Explicit rules:
+
+MMInputLib.o: $(UDDIR)/Drivers/MMInputFamily/MMInputLib.cpp
+	$(CXX) $(CXXFLAGS) -c $(INCLUDES) $(UDDIR)/FTypes.hpp -x objective-c++ $(UDDIR)/Drivers/MMInputFamily/MMInputLib.cpp -o $@
 
 %.o: %.cpp
 	$(CXX) $(CXXFLAGS) -c $(DEFINES) $(INCLUDES) -x objective-c++ $<
@@ -69,8 +72,8 @@ $(DEPFILE): Makefile
 
 all: libvdr-$(PLUGIN).so
 
-libvdr-$(PLUGIN).so: $(OBJS)
-	$(CXX) $(CXXFLAGS) -dynamiclib -Wl,-single_module,-undefined,dynamic_lookup $(frameworks) -L$(UDDIR) $(OBJS) $(LIBS) -o $@
+libvdr-$(PLUGIN).so: $(OBJS) MMInputLib.o
+	$(CXX) $(CXXFLAGS) -dynamiclib -Wl,-single_module,-undefined,dynamic_lookup $(frameworks) -L$(UDDIR) MMInputLib.o $(OBJS) $(LIBS) -o $@
 	@cp $@ $(LIBDIR)/$@.$(APIVERSION)
 
 dist: clean

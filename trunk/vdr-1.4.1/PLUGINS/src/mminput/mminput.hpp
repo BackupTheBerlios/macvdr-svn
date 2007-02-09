@@ -1,5 +1,5 @@
 /*
- *  $Id: streamdev-client.h,v 1.1.1.1 2004/12/30 22:43:59 lordjaxom Exp $
+ *  $Id: mminput.hpp,v 0.0.1 2007/02/08 Stefan Rieke $
  */
  
 #ifndef VDR_MMINPUT_H

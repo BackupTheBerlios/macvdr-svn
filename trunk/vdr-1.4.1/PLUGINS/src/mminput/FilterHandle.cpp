@@ -3,8 +3,8 @@
 #include <string.h>
 
 //#include <vdr/tools.h>
-#include "DPConnect/TSHandler.hpp"
-#include "DPConnect/Streaming.hpp"
+//#include "DPConnect/TSHandler.hpp"
+//#include "DPConnect/Streaming.hpp"
 
 //#define FILDEB(out...) printf(out)
 
@@ -57,15 +57,15 @@ static inline void Dump(uint8_t *data) {
 };
 
 bool cSectionFilter::Process(int fd, uint8_t *tspkt) {
-		TSHeader & tsh = *(TSHeader*)tspkt;
+//		TSHeader & tsh = *(TSHeader*)tspkt;
 
-		if( tsh.payloadStart == 0 && WaitForNewSection == true){
+		if( PUSI(tspkt) == 0 && WaitForNewSection == true){
 //			printf("cSectionFilter::Process: wait for new section\n");
 			return true;
 		}
 		
         int len=PayloadLength(tspkt);
-		int cc = tsh.continuity;
+		int cc = tspkt[3] & 0x0f;
 
         if (!len)
                 return true;

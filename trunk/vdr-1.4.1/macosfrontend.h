@@ -42,4 +42,26 @@
 #define  HIERARCHY_4 4
 #define  HIERARCHY_AUTO 999
 
+#define FE_READ_STATUS		   _IOR('o', 69, fe_status_t)
+#define FE_READ_BER		   _IOR('o', 70, __uint32_t)
+#define FE_READ_SIGNAL_STRENGTH    _IOR('o', 71, __uint16_t)
+#define FE_READ_SNR		   _IOR('o', 72, __uint16_t)
+#define FE_READ_UNCORRECTED_BLOCKS _IOR('o', 73, __uint32_t)
 
+typedef enum fe_status {
+	FE_HAS_SIGNAL	= 0x01,   /*  found something above the noise level */
+	FE_HAS_CARRIER	= 0x02,   /*  found a DVB signal  */
+	FE_HAS_VITERBI	= 0x04,   /*  FEC is stable  */
+	FE_HAS_SYNC	= 0x08,   /*  found sync bytes  */
+	FE_HAS_LOCK	= 0x10,   /*  everything's working... */
+	FE_TIMEDOUT	= 0x20,   /*  no lock within the last ~2 seconds */
+	FE_REINIT	= 0x40    /*  frontend was reinitialized,  */
+} fe_status_t;			  /*  application is recommended to reset */
+				  /*  DiSEqC, tone and parameters */
+
+typedef enum fe_type {
+	FE_QPSK,
+	FE_QAM,
+	FE_OFDM,
+	FE_ATSC
+} fe_type_t;

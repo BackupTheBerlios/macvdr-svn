@@ -26,6 +26,8 @@ class cMMInputDevice: public cDevice {
 	friend class cRemoteRecordings;
 
 private:
+	NSAutoreleasePool* pool;
+
 	cChannel      *m_Channel;
 	cTSBuffer           *m_TSBuffer;
 

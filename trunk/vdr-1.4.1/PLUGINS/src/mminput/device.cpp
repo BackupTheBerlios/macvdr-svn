@@ -11,6 +11,10 @@
 #include <vdr/eit.h>
 #include <vdr/timers.h>
 
+#include <vdr/macosfrontend.h>
+
+#include "MMInput.hpp"
+
 #include <time.h>
 #include <iostream>
 
@@ -19,7 +23,7 @@ using namespace std;
 
 #define VIDEOBUFSIZE MEGABYTE(3)
 
-static NSAutoreleasePool * pool = 0;
+//static NSAutoreleasePool * pool = 0;
 
 cMMInputDevice *cMMInputDevice::m_Device = NULL;
 
@@ -51,11 +55,12 @@ cMMInputDevice::cMMInputDevice(void) {
 	
 	tunerStatus = tsIdle;
 	m_Channel = new cChannel;	
-	  m_Channel->SetTerrTransponderData(0, 0, 0, 0, 0, 0, 0,0,0);
+	m_Channel->SetTerrTransponderData(0, 0, 0, 0, 0, 0, 0,0,0);
+	printf("Device gets constructed\n");
 }
 
 cMMInputDevice::~cMMInputDevice() {
-	Dprintf("Device gets destructed\n");
+	printf("Device gets destructed\n");
 	m_Device = NULL;
 
 	// and we're done
@@ -72,16 +77,14 @@ bool cMMInputDevice::Ready(void)
   return true;
 }
 
-bool cMMInputDevice::ProvidesSource(int Source) const
-{
-//  int type = Source & cSource::st_Mask;
-return true;
-/*
-  return type == cSource::stNone
-      || type == cSource::stCable && frontendType == FE_QAM
-      || type == cSource::stSat   && frontendType == FE_QPSK
-      || type == cSource::stTerr  && frontendType == FE_OFDM;
-*/
+bool cMMInputDevice::ProvidesSource(int Source) const{
+	int type = Source & cSource::st_Mask;
+
+  bool result = ( (type == cSource::stNone)
+		|| (type == cSource::stCable && MMInput::QAM == pMM->tuningSpace())
+//		|| (type == cSource::stSat   && MMInput::QPSK == pMM->tuningSpace())
+		|| (type == cSource::stTerr  && MMInput::OFDM == pMM->tuningSpace()) );
+  return result;
 }
 
 bool cMMInputDevice::ProvidesTransponder(const cChannel *Channel) const
@@ -92,7 +95,6 @@ bool cMMInputDevice::ProvidesTransponder(const cChannel *Channel) const
 
 bool cMMInputDevice::ProvidesChannel(const cChannel *Channel, int Priority, bool *NeedsDetachReceivers) const {
 	
-//	printf("cMMInputDevice::ProvidesChannel: start give priority%d, we have priority %d\n",Priority,this->Priority());
 	bool result = false;
 	bool hasPriority = Priority < 0 || Priority > this->Priority();
 	bool needsDetachReceivers = false;
@@ -115,7 +117,6 @@ bool cMMInputDevice::ProvidesChannel(const cChannel *Channel, int Priority, bool
 	
 	if(NeedsDetachReceivers) *NeedsDetachReceivers = needsDetachReceivers;
 
-//	printf("cMMInputDevice::ProvidesChannel: return value: %d, needsDetachReceivers %d\n",result,needsDetachReceivers);
 	return result;
 }
 
@@ -342,7 +343,7 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 
 #if VDRVERSNUM >= 10300
 int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
-	printf("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
+//	printf("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
 	if(FH == 0x0){
 	printf("Error! No Filter Handler exist!\n");
 	return -1;
@@ -352,6 +353,7 @@ int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
 #endif
 
 bool cMMInputDevice::Init(void) {
+	printf("cMMInputDevice::Init\n");
 	if (m_Device == NULL)
 		new cMMInputDevice;
 	return true;
@@ -402,6 +404,8 @@ void cMMInputDevice::giveTuner( MMInputDevice * pMM )
 
 bool cMMInputDevice::myTune( MMInputDevice * pMM, const cChannel *Channel){
 //	printf("cMMInputDevice::myTune\n");
+	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+
 	if(tunerStatus == tsSet){
 		tunerStatus = tsTuned;
 		if(m_Channel->Bandwidth() != Channel->Bandwidth())			tunerStatus = tsSet;
@@ -459,6 +463,7 @@ bool cMMInputDevice::myTune( MMInputDevice * pMM, const cChannel *Channel){
 
 		}
 	}
+		[pool release];
 	return true;
 }
 

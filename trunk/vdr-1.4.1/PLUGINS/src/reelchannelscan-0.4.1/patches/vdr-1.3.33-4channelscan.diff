@@ -1,0 +1,55 @@
+diff -Nur vdr-1.3.33-vanilla/device.c vdr-1.3.33/device.c
+--- vdr-1.3.33-vanilla/device.c	2005-09-17 16:29:44.000000000 +0200
++++ vdr-1.3.33/device.c	2005-09-25 18:22:47.000000000 +0200
+@@ -19,6 +19,8 @@
+ #include "status.h"
+ #include "transfer.h"
+ 
++bool scanning_on_receiving_device = false;
++
+ // --- cPesAssembler ---------------------------------------------------------
+ 
+ class cPesAssembler {
+diff -Nur vdr-1.3.33-vanilla/device.h vdr-1.3.33/device.h
+--- vdr-1.3.33-vanilla/device.h	2005-09-17 16:29:28.000000000 +0200
++++ vdr-1.3.33/device.h	2005-09-25 18:22:47.000000000 +0200
+@@ -33,6 +33,8 @@
+ #define TS_SYNC_BYTE     0x47
+ #define PID_MASK_HI      0x1F
+ 
++extern bool scanning_on_receiving_device;
++
+ enum eSetChannelResult { scrOk, scrNotAvailable, scrNoTransfer, scrFailed };
+ 
+ enum ePlayMode { pmNone,           // audio/video from decoder
+diff -Nur vdr-1.3.33-vanilla/dvbdevice.c vdr-1.3.33/dvbdevice.c
+--- vdr-1.3.33-vanilla/dvbdevice.c	2005-08-21 11:17:20.000000000 +0200
++++ vdr-1.3.33/dvbdevice.c	2005-09-25 18:24:08.000000000 +0200
+@@ -298,6 +298,7 @@
+   while (Running()) {
+         bool hasEvent = GetFrontendEvent(event, 1);
+ 
++        cCondWait::SleepMs(5);
+         cMutexLock MutexLock(&mutex);
+         switch (tunerStatus) {
+           case tsIdle:
+diff -Nur vdr-1.3.33-vanilla/vdr.c vdr-1.3.33/vdr.c
+--- vdr-1.3.33-vanilla/vdr.c	2005-09-24 15:27:26.000000000 +0200
++++ vdr-1.3.33/vdr.c	2005-09-25 18:22:47.000000000 +0200
+@@ -578,12 +578,13 @@
+            if (time(NULL) - lastTime > MINCHANNELWAIT) {
+               cChannel *Channel = Channels.GetByNumber(cDevice::CurrentChannel());
+               if (Channel && (Channel->Vpid() || Channel->Apid(0))) {
+-                 if (!Channels.SwitchTo(cDevice::CurrentChannel()) // try to switch to the original channel...
++                 if ((!scanning_on_receiving_device)
++                     && !Channels.SwitchTo(cDevice::CurrentChannel()) // try to switch to the original channel...
+                      && !(LastTimerChannel > 0 && Channels.SwitchTo(LastTimerChannel)) // ...or the one used by the last timer...
+                      && !cDevice::SwitchChannel(1) // ...or the next higher available one...
+                      && !cDevice::SwitchChannel(-1)) // ...or the next lower available one
+-                    ; 
+-                 }   
++                    ;
++                 }
+               lastTime = time(NULL); // don't do this too often
+               LastTimerChannel = -1;
+               }

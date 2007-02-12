@@ -1,0 +1,11 @@
+--- director.c.orig	2006-02-04 14:01:18.000000000 +0100
++++ director.c	2006-02-04 14:01:58.000000000 +0100
+@@ -19,7 +19,7 @@
+ void cDirectorStatus::ChannelSwitch(const cDevice *Device, int ChannelNumber)
+ {
+   const cChannel* Channel = Channels.GetByNumber(Device->CurrentChannel());
+-	if(Channel->LinkChannels() != NULL && Channel->LinkChannels()->Count() > 1)
++	if(Channel != NULL && Channel->LinkChannels() != NULL && Channel->LinkChannels()->Count() > 1)
+ 		if(parent && ChannelNumber != 0)
+ 		{
+ 			//dont know why Channelnumber != 0 is necessary, but it is

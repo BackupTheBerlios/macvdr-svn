@@ -1,0 +1,34 @@
+--- vdr-1.4.3/device.c	2006-11-05 13:40:55.765850816 +0100
++++ ../reelbox/vdr/vdr-1.4.3/device.c	2006-11-04 16:25:30.352154936 +0100
+@@ -19,6 +19,8 @@
+ #include "status.h"
+ #include "transfer.h"
+ 
++bool scanning_on_receiving_device = false;
++
+ // --- cPesAssembler ---------------------------------------------------------
+ 
+ class cPesAssembler {
+--- vdr-1.4.3/device.h	2006-08-12 11:21:04.000000000 +0200
++++ ../reelbox/vdr/vdr-1.4.3/device.h	2006-11-04 16:25:30.362153416 +0100
+@@ -33,6 +36,8 @@
+ #define TS_SYNC_BYTE     0x47
+ #define PID_MASK_HI      0x1F
+ 
++extern bool scanning_on_receiving_device;
++
+ enum eSetChannelResult { scrOk, scrNotAvailable, scrNoTransfer, scrFailed };
+ 
+ enum ePlayMode { pmNone,           // audio/video from decoder
+--- vdr-1.4.3/vdr.c	2006-11-05 13:39:21.885122856 +0100
++++ ../reelbox/vdr/vdr-1.4.3/vdr.c	2006-11-04 16:25:30.345156000 +0100
+@@ -713,7 +725,8 @@
+            if (time(NULL) - lastTime > MINCHANNELWAIT) {
+               cChannel *Channel = Channels.GetByNumber(cDevice::CurrentChannel());
+               if (Channel && (Channel->Vpid() || Channel->Apid(0))) {
+-                 if (!Channels.SwitchTo(cDevice::CurrentChannel()) // try to switch to the original channel...
++                 if (!scanning_on_receiving_device  // avoid scanning on current transponder
++                     && !Channels.SwitchTo(cDevice::CurrentChannel()) // try to switch to the original channel...
+                      && !(LastTimerChannel > 0 && Channels.SwitchTo(LastTimerChannel)) // ...or the one used by the last timer...
+                      && !cDevice::SwitchChannel(1) // ...or the next higher available one...
+                      && !cDevice::SwitchChannel(-1)) // ...or the next lower available one

@@ -1,0 +1,12 @@
+TODO LIST
+---------
+
+- let the user select to scan for TV and/or Radio channels in scan-OSD
+- Test interaktion with rotor plugin 
+- Blindscan (currently only used only for T/C)
+  or automatic receiving of transponders
+- Scaning of all source types C/T/S if available.
+- own EIT filter to display added channels
+
+BUGS
+====

@@ -25,7 +25,7 @@ LIBDIR = ../../lib
 TMPDIR = /tmp
 
 #UDDIR = /Users/rieke/Projekte/MMInput_new/DVB/
-UDDIR = /Users/rieke/Projekte/MMInput_0.8.5/DVB/
+UDDIR = MMInputLibExtSrc
 frameworks= -framework Foundation -framework IOKit
 
 ### Allow user defined options to overwrite defaults:

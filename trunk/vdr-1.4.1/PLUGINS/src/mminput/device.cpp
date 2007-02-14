@@ -56,6 +56,7 @@ cMMInputDevice::cMMInputDevice(void) {
 	tunerStatus = tsIdle;
 	m_Channel = new cChannel;	
 	m_Channel->SetTerrTransponderData(0, 0, 0, 0, 0, 0, 0,0,0);
+	CloseDvr();
 	printf("Device gets constructed\n");
 }
 

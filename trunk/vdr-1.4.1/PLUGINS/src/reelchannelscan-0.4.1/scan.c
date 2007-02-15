@@ -11,6 +11,8 @@
 #include <sys/ioctl.h>
 #include <vdr/device.h>
 #include <vdr/sources.h>
+#include <vdr/player.h>
+#include <vdr/receiver.h>
 #include "channelscan.h"
 #include "csmenu.h"
 #include "scan.h"
@@ -19,7 +21,7 @@
 #include <vdr/macosfrontend.h>
 
 // make scan delay  
-#define SCAN_DELAY 20
+#define SCAN_DELAY 5
 #define DVBS_LOCK_TIMEOUT 4000
 
 #define DBG " Channelscan DEBUG: -- "
@@ -29,6 +31,57 @@ bool scanning_on_receiving_device = false;
 
 using std::list;
 using std::cout;
+
+//-------------------------------------------------------------------------
+class cDummyReceiver: public cReceiver {
+public:
+         cDummyReceiver() : cReceiver(0,99,007) {
+         };
+         virtual ~cDummyReceiver() {};         
+         virtual void Receive(uchar *Data, int Length) {
+         };
+ };
+
+//-------------------------------------------------------------------------
+
+class cDummyReplay: public cPlayer {
+ private:
+        bool Active;
+ protected:
+       virtual void Activate(bool On) {
+                printf("dummy device Activate %d \n",On);
+                Active=On;
+       }
+ public:
+        cDummyReplay() :cPlayer() {
+                printf("Dummy device created\n");
+        };
+        virtual ~cDummyReplay() {
+                printf("Dummy replay ended!!!!!!!!!!!!!!!!!!!!!!!!!\n");
+                Detach();
+        };
+};
+
+class cDummyCtl: public cControl {
+ private:
+        cDummyReplay *dummyReplay;
+ public:
+        cDummyCtl() : cControl( dummyReplay=new cDummyReplay() ) {};
+        virtual ~cDummyCtl() {
+                };
+        virtual void Hide() {};
+        void Stop() {
+                printf("DummyCtl Stop\n");
+                delete dummyReplay;
+        };
+      
+        virtual eOSState ProcessKey(eKeys Key) {
+                return osContinue;
+        };
+};
+
+ 
+//-------------------------------------------------------------------------
 
 cScan::cScan()
 {
@@ -47,6 +100,7 @@ cScan::cScan()
    PFilter=NULL;
    SFilter=NULL;
    EFilter=NULL;
+   dummyCtl=NULL;
 }
 
 //--------- Destructor ~cScan -----------------------------------
@@ -78,30 +132,33 @@ cScan::~cScan()
 }
 
 //-------------------------------------------------------------------------
-uint16_t cScan::getSignal()
-{
-    uint16_t value = 0;
-    CHECK(ioctl(fd_frontend, FE_READ_SIGNAL_STRENGTH, &value));
-    return value;
+uint16_t cScan::getSNR(){
+	device = cDevice::GetDevice(cardnr);
+	return device->getSNR();
+
 }
 
-uint16_t cScan::getSNR()
-{
-    uint16_t value = 0;
-    CHECK(ioctl(fd_frontend, FE_READ_SNR, &value));
-    return value;
+uint16_t cScan::getStatus(){
+	device = cDevice::GetDevice(cardnr);
+	return device->getStatus();
+
 }
 
-uint16_t cScan::getStatus()
-{
-    fe_status_t value;
-    CHECK(ioctl(fd_frontend, FE_READ_STATUS, &value));
-    return value;
+uint16_t cScan::getSignal(){
+	device = cDevice::GetDevice(cardnr);
+	return device->getStatus();
+
 }
+
 //-------------------------------------------------------------------------
 
 void cScan::ScanServices()
 {
+
+     // to recieve filters, the mminput device needs recievers attached...
+     cDummyReceiver *dummyReceiver = new cDummyReceiver();
+     device->AttachReceiver(dummyReceiver);
+
     EFilter = new cEitFilter();
     PFilter = new PatFilter();
     SFilter = new SdtFilter(PFilter);
@@ -116,20 +173,24 @@ void cScan::ScanServices()
     int foundSids=0;
     foundNum=totalNum=0;
     // Heuristic: Delay scan timeout if Sids or Services withs PIDs are found
-
-        while(!PFilter->EndOfScan() && (
+//	printf("cScan::ScanServices: start time %d ist time %d SCAN_DELAY %d\n",start, time(NULL), SCAN_DELAY);
+		while(!PFilter->EndOfScan() && (
               (time(NULL) - start < SCAN_DELAY && cMenuChannelscan::scanning) ||
               (time(NULL)-PFilter->LastFoundTime() < SCAN_DELAY))) {
-        PFilter->GetFoundNum(foundNum,totalNum);
         
-        if (totalNum && !foundSids) {
-             start=time(NULL);
-             foundSids=1;
-        }
-        usleep(200*1000);
-    }
-    usleep(200*1000);
-    PFilter->GetFoundNum(foundNum,totalNum);
+//		printf("cScan::ScanServices: last found time %d time in loop %d max possible time %d\n",
+//			PFilter->LastFoundTime(), time(NULL) - start, SCAN_DELAY);
+			PFilter->GetFoundNum(foundNum,totalNum);
+        
+			if (totalNum && !foundSids) {
+				start=time(NULL);
+				foundSids=1;
+			}
+			usleep(200*1000);
+		}
+		
+		usleep(200*1000);		
+		PFilter->GetFoundNum(foundNum,totalNum);
 
         device->Detach(PFilter);
         device->Detach(SFilter);
@@ -138,6 +199,8 @@ void cScan::ScanServices()
         PFilter = NULL;
         SFilter = NULL;
         EFilter = NULL;
+    device->Detach(dummyReceiver);
+    delete dummyReceiver;
 }
 //-------------------------------------------------------------------------
 void cScan::ScanDVB_S(cTransponder *tp,cChannel *c)
@@ -174,13 +237,11 @@ void cScan::ScanDVB_S(cTransponder *tp,cChannel *c)
 
 void cScan::ScanDVB_T(cTransponder *tp, cChannel *c)
 {
-	printf("cScan::ScanDVB_T start\n");
     int timeout=1000;
     int retries=0;
     int response,n,m;
     int frequency_orig=tp->Frequency();
     int offsets[3]={0,-166666,166666};
-
     tp->SetFrequency(frequency_orig);
 
     for(n=0;n<(detailedSearch&2?3:1);n++) {
@@ -202,8 +263,9 @@ void cScan::ScanDVB_T(cTransponder *tp, cChannel *c)
         for(m=0;m<(detailedSearch&1?8:2);m++) {
 
             response=getStatus();
-            DLOG("%i RESPONSE %x\n",retries,response);
-            
+			if(getStatus() != 0){
+				DLOG("%i RESPONSE %x\n",retries,response);
+            }
             if (response&0x10==0x10) {// Lock
                 break;
             }
@@ -216,16 +278,16 @@ void cScan::ScanDVB_T(cTransponder *tp, cChannel *c)
         if (!cMenuChannelscan::scanning)
             break;
             
-        if (device->HasLock(timeout))
+        if ( device->HasLock(timeout))
         {
             DLOG(DBG "  ------ HAS LOCK ------");
+            printf("LOCK @ %.1f\n",tp->Frequency()/1.0e6);
             ScanServices();
             lastLocked=1;
             return;
         }
         lastLocked=0;
     }
-	printf("cScan::ScanDVB_T stop\n");
 }
 //-------------------------------------------------------------------------
 /*
@@ -322,7 +384,8 @@ void cScan::Action()
     cMenuChannelscan::scanning = true;
 
     device = cDevice::GetDevice(cardnr);
-	
+	device->DetachAllReceivers();
+
     cChannel *c = new cChannel;
 	
     DLOG(DBG " loop through all transponders ");
@@ -350,6 +413,9 @@ void cScan::Action()
     } // Scanning loop
     DLOG(DBG " End of transponderlist. End of scan ");
 
+    dummyCtl->Stop();
+    delete dummyCtl;
+
     cMenuChannelscan::scanning = false;
     
     if(channel) //  && scanning_on_receiving_device)
@@ -359,6 +425,7 @@ void cScan::Action()
 
     scanning_on_receiving_device = false;
 }
+
 
 //-------------------------------------------------------------------------
 
@@ -388,22 +455,9 @@ bool cScan::StartScanning(scanParameters *scp)
     cardnr = scp->card;
     DLOG (DBG " Stop Replay Card Number %d", cardnr);
 
-/*
-    // Always disable LiveView
-    DLOG (DBG " scanning_on_receiving_device=true ");
-    scanning_on_receiving_device=true;
-    char *buffer;
-    asprintf(&buffer,"/dev/dvb/adapter%d/frontend0", cardnr);
+    dummyCtl=new cDummyCtl();
+//    cControl::Launch(dummyCtl);
 
-    fd_frontend = open(buffer,O_RDONLY | O_NONBLOCK);
-    if (fd_frontend <= 0)
-    {
-        esyslog ("cant open device: %s ", buffer);
-        free(buffer);
-        return false;
-    }
-    free(buffer);
-*/
     // setting scanning state only here
     //cMenuChannelscan::scanning = true;
     DLOG(DBG " End Start scanning CallStart");

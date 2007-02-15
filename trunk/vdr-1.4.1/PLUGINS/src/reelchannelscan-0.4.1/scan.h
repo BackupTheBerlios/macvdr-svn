@@ -32,12 +32,15 @@ using std::endl;
 class SdtFilter;
 class PatFilter;
 
+class cDummyCtl;
 
 // -- cScan --------------------------------------------------------
 
 class cScan : public cThread {
 friend class SdtFilter;
 private:
+
+	cDummyCtl *dummyCtl;
 
    cScan(const cScan&);
    cScan&operator=(const cScan&);

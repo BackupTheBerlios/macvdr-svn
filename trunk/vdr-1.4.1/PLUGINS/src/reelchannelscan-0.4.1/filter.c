@@ -285,7 +285,7 @@ bool PatFilter::SidinSdt(int Sid)
 
 void PatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Length)
 {
-//  printf("PID %i TID %i\n",Pid,Tid);
+  printf("PID %i TID %i\n",Pid,Tid);
 
   if (lastFound<time(NULL) && waitingForGodot<10) {  // There's something on this channel, waiting a bit longer...
     waitingForGodot++;
@@ -483,7 +483,7 @@ void PatFilter::Process(u_short Pid, u_char Tid, const u_char *Data, int Length)
      Channels.Unlock();
      }
   if (sdtfinished && num>=sdtFilter->numUsefulSid) {
-//    printf("#### %i %i\n", num,sdtFilter->numSid);
+    printf("#### %i %i\n", num,sdtFilter->numSid);
     endofScan=true;
   }
 }

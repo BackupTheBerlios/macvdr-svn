@@ -196,10 +196,15 @@ cTerrTransponder::cTerrTransponder(int ChannelNr, int Frequency, int Bandwith)
    // fec is called Srate in vdr 
    fec_h_ = FEC_AUTO;
    fec_l_ = FEC_AUTO;
+//   fec_h_ = FEC_2_3;
+//   fec_l_ = FEC_2_3;
    hierarchy_ = HIERARCHY_NONE;
    modulation_ = FE_OFDM;
+//   modulation_ = QAM_16;
    guard_ =  GUARD_INTERVAL_AUTO;
+//   guard_ =  GUARD_INTERVAL_1_4;
    transmission_ = TRANSMISSION_MODE_AUTO;
+//   transmission_ = TRANSMISSION_MODE_8K;
 }
 
 cTerrTransponder::~cTerrTransponder()
@@ -417,11 +422,11 @@ void cTransponders::CalcTerrTpl()
    
    position_ = "Terrestrial";
 
-   for (channel=5; channel <= 69; channel++) 
+//   for (channel=5; channel <= 69; channel++) 
+   for (channel=20; channel <= 23; channel++) // only for tests
    {
        f = channel2Frequency(0,channel,bandwidth);
        if (f) {
-			if(bandwidth == BANDWIDTH_7_MHZ){printf("cTransponders::CalcTerrTpl: bandwidth is set to 7MHz\n");}
            cTerrTransponder *t = new cTerrTransponder(channel, f, bandwidth);
            v_tp_.push_back(t);
        }

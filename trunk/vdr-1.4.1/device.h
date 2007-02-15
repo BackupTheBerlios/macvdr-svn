@@ -541,6 +541,13 @@ public:
        ///< Detaches all receivers from this device for this pid.
   void DetachAllReceivers(void);
        ///< Detaches all receivers from this device.
+
+// extra part only for the mac.
+public:
+  virtual uint getSNR(void) const;
+  virtual uint getSignal(void) const;
+  virtual uint getStatus(void) const;
+  
   };
 
 /// Derived cDevice classes that can receive channels will have to provide

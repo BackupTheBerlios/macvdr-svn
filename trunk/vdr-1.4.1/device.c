@@ -1304,6 +1304,18 @@ void cDevice::DetachAllReceivers(void)
       }
 }
 
+uint cDevice::getSNR(void) const{
+	return 0;
+}
+
+uint cDevice::getSignal(void) const{
+	return 0;
+}
+
+uint cDevice::getStatus(void) const {
+	return 0;
+}
+
 // --- cTSBuffer -------------------------------------------------------------
 
 cTSBuffer::cTSBuffer(int File, int Size, int CardIndex)

@@ -176,6 +176,46 @@ bool cMMInputDevice::SetChannelDevice(const cChannel *Channel,
 	return true;
 }
 
+uint cMMInputDevice::getSNR(void) const{
+	UInt32 progress = 0;
+	UInt32 strength = 0;
+	UInt32 quality = 0;
+	pMM->situation( progress, strength, quality );
+	return quality;
+}
+
+uint cMMInputDevice::getSignal(void) const{
+	UInt32 progress = 0;
+	UInt32 strength = 0;
+	UInt32 quality = 0;
+	pMM->situation( progress, strength, quality );
+	return strength;
+}
+
+uint cMMInputDevice::getStatus(void) const{
+	UInt32 progress = 10;
+	UInt32 strength = 10;
+	UInt32 quality = 10;
+	pMM->situation( progress, strength, quality );
+/*
+	printf("cMMInputDevice::getStatus: value of progress is: 0x%x\n",progress);
+	printf("cMMInputDevice::getStatus: value of strength is: 0x%x\n",strength);
+	printf("cMMInputDevice::getStatus: value of quality is: 0x%x\n",quality);
+*/
+	return progress;
+}
+
+bool cMMInputDevice::HasLock(int TimeoutMs){
+	
+	if(getStatus() < 0xffff){
+		usleep(TimeoutMs*1000);
+		if(getStatus() < 0xffff) return false;
+	}
+	else{ 
+		return true;
+	}
+}
+
 bool cMMInputDevice::HasDecoder(void) const
 {
   return false;

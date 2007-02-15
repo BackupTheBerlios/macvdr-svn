@@ -59,12 +59,7 @@ protected:
 	virtual bool SetChannelDevice(const cChannel *Channel, bool LiveView);
 	virtual bool cMMInputDevice::HasDecoder() const;
 	virtual int cMMInputDevice::ProvidesCa(const cChannel*) const;
-	virtual bool HasLock(int TimeoutMs) 
-	{
-		//printf("HasLock is %d\n", (ClientSocket.DataSocket(siLive) != NULL));
-		//return ClientSocket.DataSocket(siLive) != NULL;
-		return true;
-	}
+	virtual bool HasLock(int TimeoutMs);
 
 	virtual bool SetPid(cPidHandle *Handle, int Type, bool On);
 	virtual bool OpenDvr(void);
@@ -95,6 +90,11 @@ public:
 	bool myTune( MMInputDevice * pMM , const cChannel *Channel);
 	
 	static cMMInputDevice *GetDevice(void) { return m_Device; }
+	
+	uint getSignal(void) const;
+	uint getSNR(void) const;
+	uint getStatus(void) const;
+
 };
 
 static char * spectra[] = {

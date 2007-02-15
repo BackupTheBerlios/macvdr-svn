@@ -844,7 +844,10 @@ char *cReadLine::Read(FILE *f)
       buffer = (char*)malloc(n);
  
   // FIXME!!! feof()? 
-  fgets(buffer,n,f);
+  if (fgets(buffer,n,f))
+     n=strlen(buffer);
+  else n=0;
+
   if (n > 0 && !feof(f) ) {
      n--;
      if (buffer[n] == '\n') {

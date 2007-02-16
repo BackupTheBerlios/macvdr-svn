@@ -341,11 +341,6 @@ static inline void Dump(uint8_t *data) {
 };
 
 bool cMMInputDevice::GetTSPacket(uchar *&Data) {
-/*	if(AllTSPacket%100000 == 0){
-			printf("cMMInputDevice::GetTSPacket: length=%d, count=%d\n",blobSize,TSPackets);
-	}
-	AllTSPacket++;
-*/	
 	if(TSPacketCounter == TSPackets){	
 		TSPackets = pMM->retrieve( m_blobDate, blobSize );
 		TSPacketCounter = 0;
@@ -369,22 +364,21 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 	 
 	int pid = GetPid(Data);
 
-	if(HasPid(pid)){
-        TSPacketCounter++;
-        return true;
+	if(pid != 0x0){ // temporary fix, because in device.c  the unused pids has the value 0x0
+		if(HasPid(pid) == true){
+			TSPacketCounter++;
+			return true;
+		}
 	}
 
 	FH->Process(Data);
-
-	Data = NULL;
-
 	TSPacketCounter++;
 	return true;
 }
 
 #if VDRVERSNUM >= 10300
 int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
-//	printf("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
+	printf("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
 	if(FH == 0x0){
 	printf("Error! No Filter Handler exist!\n");
 	return -1;

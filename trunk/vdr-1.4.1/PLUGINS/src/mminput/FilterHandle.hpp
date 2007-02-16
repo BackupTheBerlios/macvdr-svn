@@ -23,7 +23,7 @@ private:
 		cSectionFilter *sf;
 	};
 	
-        int8_t PidNum[MAXDEVICEFILTER];
+        int PidNum[MAXDEVICEFILTER];
 	FilterPids FH[MAXDEVICEFILTER];
 	int maxFilter;
 	bool ClosePipe(int Pid, int tid);

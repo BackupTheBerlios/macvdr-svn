@@ -6,11 +6,16 @@ Project's homepage:          URL
 
 Latest version available at: URL
 
-See the file COPYING for license information.
-
+License:
+--------
+- See the file COPYING for license information.
+- For the License and the warranty of the MMInput device driver source code, which is use in this plugin, 
+	have a look to www.defyne.org/dvb please.
+	
 Description:
+------------
 
-This plugin is a device mapper for MMInput drivers
+- This plugin is a device mapper for MMInput drivers
 It can be used as an input device for the vdr.
 
 Requirements:

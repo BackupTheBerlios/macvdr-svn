@@ -211,9 +211,7 @@ bool cMMInputDevice::HasLock(int TimeoutMs){
 		usleep(TimeoutMs*1000);
 		if(getStatus() < 0xffff) return false;
 	}
-	else{ 
-		return true;
-	}
+        return true;
 }
 
 bool cMMInputDevice::HasDecoder(void) const
@@ -351,34 +349,41 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 		return true;
 	};
 
-	Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
-       // Dump(Data);
+        while (TSPacketCounter < TSPackets) {
+                Data = &((uchar*)m_blobDate)[(TSPacketCounter)*188];
+                // Dump(Data);
 
-// do we have a valid ts packet?
-	if(Data[0] != 0x47){
-//		printf("cMMInputDevice::GetTSPacket: sync byte wrong %x \n",Data[0]);
-		Data = NULL;
-		TSPacketCounter++;
-		return true;
-	 }
+                // do we have a valid ts packet?
+                if(Data[0] != 0x47){
+                        //printf("cMMInputDevice::GetTSPacket: sync byte wrong %x \n",Data[0]);
+                        TSPacketCounter++;
+                        continue;
+                }
 	 
-	int pid = GetPid(Data);
+                int pid = GetPid(Data);
+                if ( pid == 8 || pid == 191 ) {
+                        printf("padding packet (%d) \n",pid);
+                        TSPacketCounter++;
+                        continue;
+                }
 
-	if(pid != 0x0){ // temporary fix, because in device.c  the unused pids has the value 0x0
-		if(HasPid(pid) == true){
-			TSPacketCounter++;
-			return true;
-		}
-	}
+                if(pid != 0x0){ // temporary fix, because in device.c  the unused pids has the value 0x0
+                        if(HasPid(pid) == true){
+                                TSPacketCounter++;
+                                return true;
+                        }
+                }
 
-	FH->Process(Data);
-	TSPacketCounter++;
+                FH->Process(Data);
+                TSPacketCounter++;
+        };
+        Data=NULL;
 	return true;
 }
 
 #if VDRVERSNUM >= 10300
 int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
-	printf("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
+	//printf("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
 	if(FH == 0x0){
 	printf("Error! No Filter Handler exist!\n");
 	return -1;

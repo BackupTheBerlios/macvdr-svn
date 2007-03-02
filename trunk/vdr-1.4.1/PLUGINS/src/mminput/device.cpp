@@ -25,6 +25,12 @@ using namespace std;
 
 //static NSAutoreleasePool * pool = 0;
 
+//#define DEVDEB(out...)  printf(out)
+
+#ifndef DEVDEB
+#define DEVDEB(out...)
+#endif
+
 cMMInputDevice *cMMInputDevice::m_Device = NULL;
 
 cMMInputDevice::cMMInputDevice(void) {
@@ -95,7 +101,7 @@ bool cMMInputDevice::ProvidesTransponder(const cChannel *Channel) const
 }
 
 bool cMMInputDevice::ProvidesChannel(const cChannel *Channel, int Priority, bool *NeedsDetachReceivers) const {
-	
+        DEVDEB("ProvidesChannel...\n");	
 	bool result = false;
 	bool hasPriority = Priority < 0 || Priority > this->Priority();
 	bool needsDetachReceivers = false;
@@ -118,6 +124,8 @@ bool cMMInputDevice::ProvidesChannel(const cChannel *Channel, int Priority, bool
 	
 	if(NeedsDetachReceivers) *NeedsDetachReceivers = needsDetachReceivers;
 
+        DEVDEB("ProvidesChannel returns %d. needsDetachtReceivers %d\n",
+                result,needsDetachReceivers);
 	return result;
 }
 
@@ -224,13 +232,14 @@ int cMMInputDevice::ProvidesCa(const cChannel *Channel) const{
 }
 
 bool cMMInputDevice::IsTunedTo(const cChannel *Channel) const {
-//	printf("cMMInputDevice::IsTunedTo check\n");
+  DEVDEB("cMMInputDevice::IsTunedTo check %d\n",
+                tunerStatus != tsIdle && m_Channel->Source() == Channel->Source() 
+                && m_Channel->Transponder() == Channel->Transponder() );
   return tunerStatus != tsIdle && m_Channel->Source() == Channel->Source() && m_Channel->Transponder() == Channel->Transponder();
 }
 
 bool cMMInputDevice::SetPid(cPidHandle *Handle, int Type, bool On) {
-	
-//	printf("MMInput device: SetPid, Pid=%d type %d on %d\n", Handle->pid,Type,On);
+	DEVDEB("MMInput device: SetPid, Pid=%d type %d on %d\n", Handle->pid,Type,On);
 	// check if array, to store the pids for one channel exist allready
 	// if not create one witth default size
 	return true;
@@ -310,7 +319,7 @@ bool cMMInputDevice::SetPid(cPidHandle *Handle, int Type, bool On) {
 }
 
 bool cMMInputDevice::OpenDvr(void) {
-//	printf("OpenDvr\n");
+        DEVDEB("OpenDvr\n");
 	CloseDvr();
 	if (!pMM->fill( true )){
 		printf("Error: Could not start streaming...\n");
@@ -323,7 +332,7 @@ bool cMMInputDevice::OpenDvr(void) {
 }
 
 void cMMInputDevice::CloseDvr(void) {
-//	printf("CloseDvr\n");
+        DEVDEB("CloseDvr\n");
 	pMM->fill( false );
 }
 
@@ -383,7 +392,7 @@ bool cMMInputDevice::GetTSPacket(uchar *&Data) {
 
 #if VDRVERSNUM >= 10300
 int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
-	//printf("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
+	DEVDEB("OpenFilter pid 0x%x, Tid 0x%x Mask 0x%x\n",Pid, Tid, Mask);
 	if(FH == 0x0){
 	printf("Error! No Filter Handler exist!\n");
 	return -1;
@@ -393,7 +402,7 @@ int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
 #endif
 
 bool cMMInputDevice::Init(void) {
-	printf("cMMInputDevice::Init\n");
+	DEVDEB("cMMInputDevice::Init\n");
 	if (m_Device == NULL)
 		new cMMInputDevice;
 	return true;
@@ -443,7 +452,10 @@ void cMMInputDevice::giveTuner( MMInputDevice * pMM )
 }
 
 bool cMMInputDevice::myTune( MMInputDevice * pMM, const cChannel *Channel){
-//	printf("cMMInputDevice::myTune\n");
+	DEVDEB("cMMInputDevice::myTune\n");
+        if (IsTunedTo(Channel))
+                return true;
+
 	NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
 
 	if(tunerStatus == tsSet){

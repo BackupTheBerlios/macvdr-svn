@@ -6,12 +6,32 @@
 #define VDR_MMINPUT_H
 
 #include <vdr/plugin.h>
+#include <vdr/thread.h>
+#include <vector>
+
+#include "TunerData.h"
 
 extern const char *VERSION;
+
+class cTimerMMInput : public cThread{
+	private:
+		int _sleepTime;
+		std::vector< TunerRec* >*_TunerData;
+	protected:
+		virtual void Action(void);
+	public:
+		cTimerMMInput(int sleep, std::vector< TunerRec* >* TunerData);
+		virtual ~cTimerMMInput();
+};
 
 class cPluginMMInput : public cPlugin {
 private:
 	static const char *DESCRIPTION;
+// timer thread to scan for new devices
+	cTimerMMInput* _TimerMMInput;
+
+	cMutex mutex;
+	std::vector< TunerRec* >* _TunerData;
 
 public:
   cPluginMMInput(void);

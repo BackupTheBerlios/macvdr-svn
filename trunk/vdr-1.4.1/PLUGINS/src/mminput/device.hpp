@@ -1,7 +1,7 @@
 /*
  *  $Id: device.hpp,v 0.0.1 2007/02/08 Stefan Rieke
  */
- 
+
 #ifndef VDR_MMINPUTDEV_DEVICE_H
 #define VDR_MMINPUTDEV_DEVICE_H
 
@@ -16,6 +16,7 @@
 #import <Foundation/NSEnumerator.h>
 
 #include "FilterHandle.hpp"
+#include <string>
 
 class cTBString;
 
@@ -24,15 +25,15 @@ class cTBString;
 
 class cMMInputDevice: public cDevice {
 	friend class cRemoteRecordings;
-
+        
 private:
 	NSAutoreleasePool* pool;
-
+        
 	cChannel      *m_Channel;
 	cTSBuffer           *m_TSBuffer;
-
+        
 	static cMMInputDevice *m_Device;
-	int s_mmindex;
+	int _mmindex;
 	MMInputDevice* pMM;
 	UInt32 TSPackets;
 	UInt32 TSPacketCounter;
@@ -52,37 +53,38 @@ private:
 	
 	bool IsTunedTo(const cChannel *Channel) const;
 	enum eTunerStatus { tsIdle, tsSet, tsTuned, tsLocked };
-
+        
 	eTunerStatus tunerStatus;
-
+	bool _activeTuner;
+        
 protected:
-	virtual bool SetChannelDevice(const cChannel *Channel, bool LiveView);
+                virtual bool SetChannelDevice(const cChannel *Channel, bool LiveView);
 	virtual bool cMMInputDevice::HasDecoder() const;
 	virtual int cMMInputDevice::ProvidesCa(const cChannel*) const;
 	virtual bool HasLock(int TimeoutMs);
-
+        
 	virtual bool SetPid(cPidHandle *Handle, int Type, bool On);
 	virtual bool OpenDvr(void);
 	virtual void CloseDvr(void);
 	virtual bool GetTSPacket(uchar *&Data);
-
+        
 #if VDRVERSNUM >= 10300
-//	virtual int OpenFilter(u_short Pid, u_char Tid, u_char Mask);
+        //	virtual int OpenFilter(u_short Pid, u_char Tid, u_char Mask);
 #endif
-
+        
 public:
-	cMMInputDevice(void);
+                cMMInputDevice();
 	virtual ~cMMInputDevice();
-
+        
 	virtual bool ProvidesSource(int Source) const;
 	virtual bool ProvidesTransponder(const cChannel *Channel) const;
 	virtual bool ProvidesChannel(const cChannel *Channel, int Priority = -1,
-			bool *NeedsDetachReceivers = NULL) const;
+                                     bool *NeedsDetachReceivers = NULL) const;
 	virtual	bool cMMInputDevice::Ready(void);
-//	virtual int ProvidesCa(const cChannel *Channel) const;
+        //	virtual int ProvidesCa(const cChannel *Channel) const;
 	virtual int OpenFilter(u_short Pid, u_char Tid, u_char Mask);
-
-	static bool Init(void);
+        
+	static cMMInputDevice* Init();
 	static bool ReInit(void);
 	
 	MMInputDevice * grabTuner( int mmindex );
@@ -90,11 +92,12 @@ public:
 	bool myTune( MMInputDevice * pMM , const cChannel *Channel);
 	
 	static cMMInputDevice *GetDevice(void) { return m_Device; }
+        
+	bool SetMMInputDevice(MMInputDevice * pMM, const int mmindex);
 	
 	uint getSignal(void) const;
 	uint getSNR(void) const;
 	uint getStatus(void) const;
-
 };
 
 static char * spectra[] = {
@@ -109,6 +112,5 @@ static char * dkinds[] = {
 	/*[MMInput::DVB]  =*/ "DVB",
 	/*[MMInput::ATSC] =*/ "ATSC"
 };		// that's all we support
-
 
 #endif // VDR_MMINPUTDEV_DEVICE_H

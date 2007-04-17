@@ -43,7 +43,6 @@ cMMInputDevice::cMMInputDevice() {
         
 	m_Device = this;
         
-	StartSectionHandler();
 	
 	FH = 0x0;
 	FH = new cFilterHandle;
@@ -59,6 +58,7 @@ cMMInputDevice::cMMInputDevice() {
 	m_Channel = new cChannel;	
 	m_Channel->SetTerrTransponderData(0, 0, 0, 0, 0, 0, 0,0,0);
 	CloseDvr();
+	StartSectionHandler();
 	printf("Device gets constructed\n");
 }
 
@@ -356,9 +356,11 @@ int cMMInputDevice::OpenFilter(u_short Pid, u_char Tid, u_char Mask) {
 cMMInputDevice* cMMInputDevice::Init() {
 	printf("cMMInputDevice::Init\n");
         
-        if (m_Device == NULL)
+        if (UseDevice(NextCardIndex())) {
                 m_Device = new cMMInputDevice();
-	return m_Device;
+                return m_Device;
+        }
+        return NULL;
 }
 
 bool cMMInputDevice::ReInit(void) {

@@ -20,7 +20,7 @@ class cTimerMMInput : public cThread{
 	protected:
 		virtual void Action(void);
 	public:
-		cTimerMMInput(int sleep, std::vector< TunerRec* >* TunerData);
+                cTimerMMInput(int sleep, std::vector< TunerRec* >* TunerData);
 		virtual ~cTimerMMInput();
 };
 
@@ -34,11 +34,13 @@ private:
 	std::vector< TunerRec* >* _TunerData;
 
 public:
-  cPluginMMInput(void);
+                cPluginMMInput(void);
   virtual ~cPluginMMInput();
   virtual const char *Version(void) { return VERSION; }
   virtual const char *Description(void);
   virtual bool Start(void);
+  virtual bool cPluginMMInput::Initialize(void);
+
   virtual void Housekeeping(void);
   virtual const char *MainMenuEntry(void);
   virtual cOsdObject *MainMenuAction(void);

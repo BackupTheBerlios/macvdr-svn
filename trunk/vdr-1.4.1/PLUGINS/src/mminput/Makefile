@@ -70,7 +70,7 @@ $(DEPFILE): Makefile
 
 ### Targets:
 
-all: libvdr-$(PLUGIN).so
+all: MMInputLib.o libvdr-$(PLUGIN).so
 
 libvdr-$(PLUGIN).so: $(OBJS) MMInputLib.o
 	$(CXX) $(CXXFLAGS) -dynamiclib -Wl,-single_module,-undefined,dynamic_lookup $(frameworks) -L$(UDDIR) MMInputLib.o $(OBJS) $(LIBS) -o $@

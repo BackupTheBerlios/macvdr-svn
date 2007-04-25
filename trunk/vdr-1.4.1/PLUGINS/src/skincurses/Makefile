@@ -66,7 +66,7 @@ $(DEPFILE): Makefile
 all: libvdr-$(PLUGIN).so
 
 libvdr-$(PLUGIN).so: $(OBJS)
-	$(CXX) $(CXXFLAGS) -shared $(OBJS) -lncurses -o $@
+	$(CXX) $(CXXFLAGS) -dynamiclib -Wl,-single_module,-undefined,dynamic_lookup $(OBJS) -lncurses -o $@
 	@cp $@ $(LIBDIR)/$@.$(APIVERSION)
 
 dist: clean

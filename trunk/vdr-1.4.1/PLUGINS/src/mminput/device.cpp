@@ -367,41 +367,6 @@ bool cMMInputDevice::ReInit(void) {
 	return Init();
 }
 
-MMInputDevice * cMMInputDevice::grabTuner( int mmindex ){
-        
-	// access it
-	
-	printf("check: No device index %d.\n", mmindex );
-	MMInputDevice * pMM = MMInputDevice::withIndex( mmindex );
-        
-	if (pMM == NULL)
-         {
-		fprintf( stderr, "Error: No device index %d.\n", mmindex );
-		return NULL;
-         }
-	fprintf( stderr, "Accessing device index %d...\n", mmindex );
-        
-	// get its details
-	int tspace = pMM->tuningSpace() & 63;
-	MMInput::DataKind datakind = pMM->dataKind();
-	fprintf( stderr, "It is a %s %s device.\n",
-                 tspace < (int)(sizeof(spectra)/sizeof(*spectra)) ? spectra[tspace] : "Unknown",
-                 datakind < (int)(sizeof(dkinds)) ? dkinds[datakind] : "Unsupported" );
-	
-	// activate it
-	fprintf( stderr, "Activating device...\n" );
-	if (pMM->activate() != 0)
-         {
-		fprintf( stderr, "Error: Could not activate device index %d.\n", mmindex );
-		pMM->release();
-		return NULL;
-         }
-	fprintf( stderr, "Activated device index %d.\n", mmindex );
-        
-	_mmindex = mmindex;
-	return pMM;
-}
-
 bool cMMInputDevice::SetMMInputDevice(MMInputDevice * _pMM, const int mmindex){
 	if (_pMM == NULL){
 		fprintf( stderr, "Error: No device found.\n");
@@ -420,12 +385,14 @@ bool cMMInputDevice::SetMMInputDevice(MMInputDevice * _pMM, const int mmindex){
 	
 	// activate it
 	fprintf( stderr, "Activating device...\n" );
+
 	if (pMM->activate() != 0)
          {
-		fprintf( stderr, "Error: Could not activate device.\n");
+		fprintf( stderr, "cMMInputDevice::SetMMInputDevice: Error: Could not activate device.\n");
 		pMM->release();
 		return false;
          }
+
 	fprintf( stderr, "Activated device.\n");
         
 	sleep(1);

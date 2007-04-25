@@ -14,7 +14,7 @@
 #include "i18n.h"
 #define MAXDVBDEVICES 2
 #define MAXMMINPUTDEVICEINDEX 5
-
+#define SLEEPTIME 10
 const char *cPluginMMInput::DESCRIPTION = "MMInput Driver";
 
 cPluginMMInput::cPluginMMInput(void) {
@@ -38,7 +38,7 @@ bool cPluginMMInput::Start(void) {
         //	i18n_name = Name();
         RegisterI18n(Phrases);
                 
-        _TimerMMInput = new cTimerMMInput(1, _TunerData);
+        _TimerMMInput = new cTimerMMInput(SLEEPTIME, _TunerData);
         _TimerMMInput->Start();
         
         return true;
@@ -95,12 +95,27 @@ cTimerMMInput::~cTimerMMInput(){
 /*if at least on device is found, the trhead will be destroyed */
 void cTimerMMInput::Action(void){
         
-        bool found = false;
         MMInputDevice * pMM;
         
         while(Running()){
                 
-                if ( found == true ) Cancel(1);
+                // check if there si an empty slot in the vector
+                // if not delete timer thread.
+                
+                // first: count registerd devices
+                uint8_t numDev = 0;
+                for(int i = 0; i < (int)_TunerData->size(); i++){
+
+                        TunerRec* tuner = (* _TunerData)[i];
+                        if( tuner->mmindex != -1) numDev++;
+                }
+                
+                // now check, if there is an empty slot too register a new device
+                if(numDev == (uint8_t)_TunerData->size()){
+                        printf("cTimerMMInput destreoy timer thread\n");                        
+                        Cancel(1);
+                        break;
+                }
                 
                 for(int i = 0; i < MAXMMINPUTDEVICEINDEX; i++){
                         bool full = true; // see is there enough space to handle more devices
@@ -114,12 +129,17 @@ void cTimerMMInput::Action(void){
 
                                 printf("cTimerMMInput check index %d\n",i);
                                 TunerRec* tuner = (* _TunerData)[j];
-                                if( tuner->mmindex == i || tuner->mmindex != -1) continue;
+                                if( tuner->mmindex == i){
+                                        full = false;
+                                        break;                                        
+                                }
+                                
+                                if( tuner->mmindex != -1) continue;
                                 full = false;
                                 
                                 printf("cTimerMMInput try to fetch device with index %d\n",i);
                         
-                                printf("set device at position %d\n",j);
+                                printf("set device with index %d at position %d\n",i,j);
                                 
                                 tuner->mmindex = i;
                                 tuner->pMM = pMM;
@@ -133,14 +153,14 @@ void cTimerMMInput::Action(void){
                                 
                                 tuner->pDevice->SetMMInputDevice(pMM, i);
                                 tuner->activated = true;
-                                found = true;
+                                numDev++;
                                 break;
                         }                        
                         if(full == true) break; // because we could not handle addition devices
                 }
                 
                 printf("TimerMMInput running with sleep time %d seconds. number of device(s) %d\n",
-                       _sleepTime,(int)_TunerData->size());
+                       _sleepTime,numDev);
                 cCondWait::SleepMs(_sleepTime*1000);
         }
 }

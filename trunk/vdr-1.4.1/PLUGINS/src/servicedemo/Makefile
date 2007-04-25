@@ -67,11 +67,11 @@ $(DEPFILE): Makefile
 all: libvdr-$(PLUGIN1).so libvdr-$(PLUGIN2).so
 
 libvdr-$(PLUGIN1).so: $(PLUGIN1).o
-	$(CXX) $(CXXFLAGS) -shared $(PLUGIN1).o -o $@
+	$(CXX) $(CXXFLAGS) -dynamiclib -Wl,-single_module,-undefined,dynamic_lookup $(PLUGIN1).o -o $@
 	@cp $@ $(LIBDIR)/$@.$(APIVERSION)
 
 libvdr-$(PLUGIN2).so: $(PLUGIN2).o
-	$(CXX) $(CXXFLAGS) -shared $(PLUGIN2).o -o $@
+	$(CXX) $(CXXFLAGS) -dynamiclib -Wl,-single_module,-undefined,dynamic_lookup $(PLUGIN2).o -o $@
 	@cp $@ $(LIBDIR)/$@.$(APIVERSION)
 
 dist: clean

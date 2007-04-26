@@ -478,6 +478,17 @@ char *ExchangeChars(char *s, bool ToFileSystem)
            }
         p++;
         }
+
+  // A fix to avoid trouble with utf-8 character set for the mac.
+  // Character, that does not fit into the 7 bit ascii table is set to '?' 
+
+  p = s;
+  while(*p){
+    if(uint(*p) > 127)
+      *p = '?';
+    p++;
+  }
+
   return s;
 }
 

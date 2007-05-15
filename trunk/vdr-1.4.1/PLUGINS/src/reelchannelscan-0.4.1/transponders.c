@@ -422,8 +422,7 @@ void cTransponders::CalcTerrTpl()
    
    position_ = "Terrestrial";
 
-//   for (channel=5; channel <= 69; channel++) 
-   for (channel=20; channel <= 23; channel++) // only for tests
+   for (channel=5; channel <= 69; channel++) 
    {
        f = channel2Frequency(0,channel,bandwidth);
        if (f) {
